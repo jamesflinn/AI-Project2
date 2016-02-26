@@ -71,6 +71,33 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The best child of this node with updated values
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta) {
+        if (depth == 0 || isLeafNode(node)) {
+            return node;
+        }
+
+        if (isMaxNode(node)) {
+            double value = Double.NEGATIVE_INFINITY;
+
+            for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+                value = Math.max(value, alphaBetaSearch(child, depth - 1, alpha, beta).state.getUtility());
+                alpha = Math.max(alpha, value);
+
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+        } else {
+            double value = Double.POSITIVE_INFINITY;
+
+            for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+                value = Math.min(value, alphaBetaSearch(child, depth - 1, alpha, beta).state.getUtility());
+                beta = Math.min(beta, value);
+
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+        }
         return node;
     }
 
@@ -89,5 +116,23 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
         return children;
+    }
+
+    /**
+     * Returns if the given node has a children or not.
+     * @param node The node being tested.
+     * @return true if node is a leaf node.
+     */
+    private boolean isLeafNode(GameStateChild node) {
+        return node.state.getChildren() == null;
+    }
+
+    /**
+     * Returns if the given node is a max node.
+     * @param node The node being tested.
+     * @return true if the node is a max node.
+     */
+    private boolean isMaxNode(GameStateChild node) {
+        return true;
     }
 }
