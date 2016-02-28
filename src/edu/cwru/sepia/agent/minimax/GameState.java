@@ -4,8 +4,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.Unit;
+import edu.cwru.sepia.environment.model.state.*;
 import edu.cwru.sepia.util.Direction;
 
 import java.util.*;
@@ -19,6 +18,16 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
+
+    private int playersTurn;
+    private int xExtent;
+    private int yExtent;
+
+    private List<SimpleUnit> footmen;
+    private List<SimpleUnit> archers;
+
+    private List<ResourceNode.ResourceView> resources;
+
 
     /**
      * You will implement this constructor. It will
@@ -42,6 +51,33 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
+        this.xExtent = state.getXExtent();
+        this.yExtent = state.getYExtent();
+
+        List<SimpleUnit> footmen = new ArrayList<>();
+        for (Unit.UnitView unit : state.getUnits(0)) {
+            int x = unit.getXPosition();
+            int y = unit.getYPosition();
+            int baseHealth = unit.getTemplateView().getBaseHealth();
+            int currentHealth = unit.getHP();
+            int basicAttack = unit.getTemplateView().getBasicAttack();
+            int range = unit.getTemplateView().getRange();
+        }
+        this.footmen = footmen;
+
+        List<SimpleUnit> archers = new ArrayList<>();
+        for (Unit.UnitView unit : state.getUnits(1)) {
+            int x = unit.getXPosition();
+            int y = unit.getYPosition();
+            int baseHealth = unit.getTemplateView().getBaseHealth();
+            int currentHealth = unit.getHP();
+            int basicAttack = unit.getTemplateView().getBasicAttack();
+            int range = unit.getTemplateView().getRange();
+            archers.add(new SimpleUnit(x, y, baseHealth, currentHealth, basicAttack, range));
+        }
+        this.archers = archers;
+
+        this.resources = state.getAllResourceNodes();
     }
 
     /**
@@ -84,5 +120,52 @@ public class GameState {
      */
     public List<GameStateChild> getChildren() {
         return null;
+    }
+
+    /**
+     * Represents a unit, but only has the fields necessary for the Minimax algorithm.
+     */
+    private class SimpleUnit {
+        private int x;
+        private int y;
+
+        private int baseHealth;
+        private int currentHealth;
+
+        private int basicAttack;
+        private int range;
+
+        public SimpleUnit(int x, int y, int baseHealth, int currentHealth, int basicAttack, int range) {
+            this.x = x;
+            this.y = y;
+            this.baseHealth = baseHealth;
+            this.currentHealth = currentHealth;
+            this.basicAttack = basicAttack;
+            this.range = range;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public int getBaseHealth() {
+            return baseHealth;
+        }
+
+        public int getCurrentHealth() {
+            return currentHealth;
+        }
+
+        public int getBasicAttack() {
+            return basicAttack;
+        }
+
+        public int getRange() {
+            return range;
+        }
     }
 }
