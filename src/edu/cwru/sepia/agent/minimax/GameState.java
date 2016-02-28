@@ -62,6 +62,7 @@ public class GameState {
             int currentHealth = unit.getHP();
             int basicAttack = unit.getTemplateView().getBasicAttack();
             int range = unit.getTemplateView().getRange();
+            footmen.add(new SimpleUnit(x, y, baseHealth, currentHealth, basicAttack, range));
         }
         this.footmen = footmen;
 

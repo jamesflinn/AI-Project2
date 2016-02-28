@@ -1,14 +1,15 @@
 package edu.cwru.sepia.agent.minimax;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.action.DirectedAction;
+import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MinimaxAlphaBeta extends Agent {
 
@@ -115,7 +116,42 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The list of children sorted by your heuristic.
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
-        return children;
+
+        Map<Integer, GameStateChild> heuristicValues = new HashMap<>();
+        for (GameStateChild child : children) {
+            int value = 0;
+            for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
+
+                // if this is an attack then good
+                if (action.getValue().getType() == ActionType.PRIMITIVEATTACK) {
+                    value += 1;
+                }
+
+                // if we are moving away from the archer then very bad
+
+                // if we are moving into a resource then very bad
+
+            }
+
+            heuristicValues.put(value, child);
+
+        }
+
+        // This is a little roundabout way to order the children
+        // sort the keys in descending order based upon the value assigned
+        // then put each GameStateChild in the new list of gamestatechildren in order then return
+
+        ArrayList<Integer> keys = new ArrayList<>(heuristicValues.keySet());
+        Collections.sort(keys);
+        Collections.reverse(keys);
+
+        ArrayList<GameStateChild> orderedChildren = new ArrayList<>();
+
+        for (Integer heuristic : keys) {
+            orderedChildren.add(heuristicValues.get(heuristic));
+        }
+
+        return orderedChildren;
     }
 
     /**
