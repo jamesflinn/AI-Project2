@@ -68,13 +68,14 @@ public class GameState {
 
         List<SimpleUnit> archers = new ArrayList<>();
         for (Unit.UnitView unit : state.getUnits(1)) {
+            int id = unit.getID();
             int x = unit.getXPosition();
             int y = unit.getYPosition();
             int baseHealth = unit.getTemplateView().getBaseHealth();
             int currentHealth = unit.getHP();
             int basicAttack = unit.getTemplateView().getBasicAttack();
             int range = unit.getTemplateView().getRange();
-            archers.add(new SimpleUnit(x, y, baseHealth, currentHealth, basicAttack, range));
+            archers.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range));
         }
         this.archers = archers;
 
@@ -151,10 +152,20 @@ public class GameState {
         List<GameStateChild> allPossiblePositions = new ArrayList<>();
 
         for (Direction direction : Direction.values()) {
+
+            // Only move up, down, left, or right
+            if (direction.equals(Direction.NORTHEAST) ||
+                    direction.equals(Direction.NORTHWEST) ||
+                    direction.equals(Direction.SOUTHEAST) ||
+                    direction.equals(Direction.SOUTHWEST)) {
+                continue;
+            }
+
             int newX = unit.getX() + direction.xComponent();
             int newY = unit.getY() + direction.yComponent();
 
-            SimpleUnit newUnit = new SimpleUnit(newX,
+            SimpleUnit newUnit = new SimpleUnit(unit.getId(),
+                    newX,
                     newY,
                     unit.getBaseHealth(),
                     unit.getCurrentHealth(),
@@ -208,6 +219,7 @@ public class GameState {
      * Represents a unit, but only has the fields necessary for the Minimax algorithm.
      */
     private class SimpleUnit {
+        private int id;
         private int x;
         private int y;
 
@@ -217,7 +229,8 @@ public class GameState {
         private int basicAttack;
         private int range;
 
-        public SimpleUnit(int x, int y, int baseHealth, int currentHealth, int basicAttack, int range) {
+        public SimpleUnit(int id, int x, int y, int baseHealth, int currentHealth, int basicAttack, int range) {
+            this.id = id;
             this.x = x;
             this.y = y;
             this.baseHealth = baseHealth;
@@ -233,12 +246,17 @@ public class GameState {
 
             SimpleUnit that = (SimpleUnit) o;
 
-            if (x != that.x) return false;
-            if (y != that.y) return false;
-            if (baseHealth != that.baseHealth) return false;
-            if (currentHealth != that.currentHealth) return false;
-            if (basicAttack != that.basicAttack) return false;
-            return range == that.range;
+            if (id != that.getId()) return false;
+            if (x != that.getX()) return false;
+            if (y != that.getY()) return false;
+            if (baseHealth != that.getBaseHealth()) return false;
+            if (currentHealth != that.getCurrentHealth()) return false;
+            if (basicAttack != that.getBasicAttack()) return false;
+            return range == that.getRange();
+        }
+
+        public int getId() {
+            return id;
         }
 
         public int getX() {
