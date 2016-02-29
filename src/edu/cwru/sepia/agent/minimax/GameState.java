@@ -26,7 +26,7 @@ public class GameState {
     private List<SimpleUnit> footmen;
     private List<SimpleUnit> archers;
 
-    private List<ResourceNode.ResourceView> resources;
+    private List<ResourceLocation> resources;
 
 
     /**
@@ -78,7 +78,21 @@ public class GameState {
         }
         this.archers = archers;
 
-        this.resources = state.getAllResourceNodes();
+        List<ResourceLocation> resources = new ArrayList<>();
+        for (ResourceNode.ResourceView view : state.getAllResourceNodes()) {
+            resources.add(new ResourceLocation(view.getXPosition(), view.getYPosition()));
+        }
+        this.resources = resources;
+    }
+
+    public GameState(GameState oldGameState, List<SimpleUnit> footmen, List<SimpleUnit> archers) {
+        this.xExtent = oldGameState.getXExtent();
+        this.yExtent = oldGameState.getYExtent();
+        this.resources = oldGameState.getResources();
+        this.playersTurn = oldGameState.getPlayersTurn() == 0 ? 1 : 0;
+
+        this.footmen = footmen;
+        this.archers = archers;
     }
 
     /**
@@ -120,7 +134,74 @@ public class GameState {
      * @return All possible actions and their associated resulting game state
      */
     public List<GameStateChild> getChildren() {
-        return null;
+        List<GameStateChild> children = new ArrayList<>();
+        if (playersTurn == 0) {
+            for (SimpleUnit unit : footmen) {
+                children.addAll(findAllPositionsForUnit(unit));
+            }
+        } else {
+            for (SimpleUnit unit : archers) {
+                children.addAll(findAllPositionsForUnit(unit));
+            }
+        }
+        return children;
+    }
+
+    public List<GameStateChild> findAllPositionsForUnit(SimpleUnit unit) {
+        List<GameStateChild> allPossiblePositions = new ArrayList<>();
+
+        for (Direction direction : Direction.values()) {
+            int newX = unit.getX() + direction.xComponent();
+            int newY = unit.getY() + direction.yComponent();
+
+            SimpleUnit newUnit = new SimpleUnit(newX,
+                    newY,
+                    unit.getBaseHealth(),
+                    unit.getCurrentHealth(),
+                    unit.getBasicAttack(),
+                    unit.getRange());
+
+            if (!(newX >= xExtent ||
+                    newY >= yExtent ||
+                    newX < 0 ||
+                    newY < 0 ||
+                    resources.contains(new ResourceLocation(newX, newY)))) {
+                List<SimpleUnit> newUnitList;
+                if (footmen.contains(unit)) {
+                    newUnitList = new ArrayList<>(footmen);
+                } else {
+                    newUnitList = new ArrayList<>(archers);
+                }
+                newUnitList.remove(unit);
+                newUnitList.add(newUnit);
+            }
+        }
+
+        return allPossiblePositions;
+    }
+
+    public int getPlayersTurn() {
+        return playersTurn;
+    }
+
+    public int getXExtent() {
+        return xExtent;
+    }
+
+    public int getYExtent() {
+        return yExtent;
+    }
+
+    public List<SimpleUnit> getFootmen() {
+        return footmen;
+    }
+
+    public List<SimpleUnit> getArchers() {
+        return archers;
+    }
+
+    public List<ResourceLocation> getResources() {
+        return resources;
     }
 
     /**
@@ -145,6 +226,21 @@ public class GameState {
             this.range = range;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SimpleUnit that = (SimpleUnit) o;
+
+            if (x != that.x) return false;
+            if (y != that.y) return false;
+            if (baseHealth != that.baseHealth) return false;
+            if (currentHealth != that.currentHealth) return false;
+            if (basicAttack != that.basicAttack) return false;
+            return range == that.range;
+        }
+
         public int getX() {
             return x;
         }
@@ -167,6 +263,31 @@ public class GameState {
 
         public int getRange() {
             return range;
+        }
+    }
+
+    /**
+     * Simple class to hold the locations of resources.
+     */
+    private class ResourceLocation {
+        public int x;
+        public int y;
+
+        public ResourceLocation(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ResourceLocation that = (ResourceLocation) o;
+
+            if (x != that.x) return false;
+            return y == that.y;
+
         }
     }
 }
