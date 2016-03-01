@@ -57,13 +57,14 @@ public class GameState {
 
         List<SimpleUnit> footmen = new ArrayList<>();
         for (Unit.UnitView unit : state.getUnits(0)) {
+            int id = unit.getID();
             int x = unit.getXPosition();
             int y = unit.getYPosition();
             int baseHealth = unit.getTemplateView().getBaseHealth();
             int currentHealth = unit.getHP();
             int basicAttack = unit.getTemplateView().getBasicAttack();
             int range = unit.getTemplateView().getRange();
-            footmen.add(new SimpleUnit(x, y, baseHealth, currentHealth, basicAttack, range));
+            footmen.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range));
         }
         this.footmen = footmen;
 
