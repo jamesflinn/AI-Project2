@@ -130,12 +130,9 @@ public class MinimaxAlphaBeta extends Agent {
                 // give each state a value based upon distance the footman are from the archers
                 for (GameState.SimpleUnit footman : child.state.getFootmen()) {
                     for (GameState.SimpleUnit archer : child.state.getArchers()) {
-                     //chebyshev distance
+                        value -= chebyshev(footman, archer);
                     }
-
                 }
-
-                // if we are moving away from the archer then very bad
 
                 // if we are moving into a resource then very bad
 
@@ -167,7 +164,7 @@ public class MinimaxAlphaBeta extends Agent {
      *
      * @param first  The first unit
      * @param second The second unit
-     * @return       The chebyshev distance betwee the two units.
+     * @return       The chebyshev distance between the two units.
      */
     private int chebyshev(GameState.SimpleUnit first, GameState.SimpleUnit second) {
 
