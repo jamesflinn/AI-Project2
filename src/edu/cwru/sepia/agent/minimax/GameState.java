@@ -6,6 +6,7 @@ import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.environment.model.state.*;
 import edu.cwru.sepia.util.Direction;
+import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
 
@@ -135,24 +136,79 @@ public class GameState {
      * @return All possible actions and their associated resulting game state
      */
     public List<GameStateChild> getChildren() {
-        List<GameStateChild> children = new ArrayList<>();
+        List<GameStateChild> children;
+
         if (playersTurn == 0) {
-            for (SimpleUnit unit : footmen) {
-                children.addAll(findAllPositionsForUnit(unit));
-            }
+            // footmen
+            children = getGameStateChildren(footmen.get(0), footmen.get(1), archers);
         } else {
-            for (SimpleUnit unit : archers) {
-                children.addAll(findAllPositionsForUnit(unit));
-            }
+            // archers
+            SimpleUnit archer2 = archers.size() == 2 ? archers.get(1) : null;
+            children = getGameStateChildren(archers.get(0), archer2, footmen);
         }
         return children;
     }
 
-    public List<GameStateChild> findAllPositionsForUnit(SimpleUnit unit) {
-        List<GameStateChild> allPossiblePositions = new ArrayList<>();
+    public List<GameStateChild> getGameStateChildren(SimpleUnit unit1, SimpleUnit unit2, List<SimpleUnit> enemyUnits) {
+        // TODO: This only works when there are 2 units for a player, must adjust for when there is only one
+        List<GameStateChild> children = new ArrayList<>();
+        // Calculate all possible actions
+        List<Action> unit1Actions = findAllActionsForUnit(unit1, enemyUnits);
+        List<Action> unit2Actions = findAllActionsForUnit(unit2, enemyUnits);
+
+        // Cartesian product of unit1 and unit2's actions
+        List<Pair<Action, Action>> actions = new ArrayList<>();
+        for (Action unit1Action : unit1Actions) {
+            for (Action unit2Action : unit2Actions) {
+                actions.add(new Pair<>(unit1Action, unit2Action));
+            }
+        }
+
+        // Get new state from actions
+        for (Pair<Action, Action> action : actions) {
+            Action unit1Action = action.a;
+            Action unit2Action = action.b;
+
+            // First unit in pair is always friendly unit, second is enemy, if action is TargetedAction, null otherwise
+            Pair<SimpleUnit, SimpleUnit> unit1Pair = createNewUnitFromAction(unit1, unit1Action);
+            Pair<SimpleUnit, SimpleUnit> unit2Pair = createNewUnitFromAction(unit2, unit2Action);
+            // This list contains the units for a single player
+            List<SimpleUnit> newUnitList = new ArrayList<>();
+            newUnitList.add(unit1Pair.a);
+            newUnitList.add(unit2Pair.a);
+
+            // Create new GameState
+            GameState newState;
+            if (enemyUnits.equals(this.footmen)) {
+                List<SimpleUnit> newFootmen = createNewEnemyList(unit1Pair.b, unit2Pair.b, this.footmen);
+                newState = new GameState(this, newFootmen, newUnitList);
+            } else {
+                List<SimpleUnit> newArchers = createNewEnemyList(unit1Pair.b, unit2Pair.b, this.archers);
+                newState = new GameState(this, newUnitList, newArchers);
+            }
+
+            // Create actions
+            Map<Integer, Action> actionMap = new HashMap<>();
+            actionMap.put(unit1.getId(), unit1Action);
+            actionMap.put(unit2.getId(), unit2Action);
+
+            children.add(new GameStateChild(actionMap, newState));
+        }
+
+        return children;
+    }
+
+
+    /**
+     * Finds all possible actions for a given unit
+     * @param unit The unit whose actions are being found
+     * @param enemyUnits The enemy units
+     * @return A list of all possible actions
+     */
+    private List<Action> findAllActionsForUnit(SimpleUnit unit, List<SimpleUnit> enemyUnits) {
+        List<Action> allPossibleActions = new ArrayList<>();
 
         for (Direction direction : Direction.values()) {
-
             // Only move up, down, left, or right
             if (direction.equals(Direction.NORTHEAST) ||
                     direction.equals(Direction.NORTHWEST) ||
@@ -164,6 +220,41 @@ public class GameState {
             int newX = unit.getX() + direction.xComponent();
             int newY = unit.getY() + direction.yComponent();
 
+            if (!(newX >= xExtent ||
+                    newY >= yExtent ||
+                    newX < 0 ||
+                    newY < 0 ||
+                    resources.contains(new ResourceLocation(newX, newY)))) {
+                boolean noEnemy = true;
+                for (SimpleUnit enemyUnit : enemyUnits) {
+                    if (enemyUnit.isLocated(newX, newY)) {
+                        // TODO: This only allows footmen to attack archers. Must include range, also movement must change
+                        noEnemy = false;
+                        allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), enemyUnit.getId()));
+                    }
+                }
+                if (noEnemy) {
+                    allPossibleActions.add(Action.createPrimitiveMove(unit.getId(), direction));
+                }
+            }
+        }
+
+        return allPossibleActions;
+    }
+
+    /**
+     * Creates new units from a given action.
+     * @param unit The unit performing the action
+     * @param action The action being performed
+     * @return A pair of units, the first being the unit after performing the action,
+     *         and the second being the unit that was targeted, null if no unit was targeted
+     */
+    public Pair<SimpleUnit, SimpleUnit> createNewUnitFromAction(SimpleUnit unit, Action action) {
+        if (action instanceof DirectedAction) {
+            DirectedAction directedAction = (DirectedAction) action;
+            int newX = unit.getX() + directedAction.getDirection().xComponent();
+            int newY = unit.getY() + directedAction.getDirection().yComponent();
+
             SimpleUnit newUnit = new SimpleUnit(unit.getId(),
                     newX,
                     newY,
@@ -172,23 +263,80 @@ public class GameState {
                     unit.getBasicAttack(),
                     unit.getRange());
 
-            if (!(newX >= xExtent ||
-                    newY >= yExtent ||
-                    newX < 0 ||
-                    newY < 0 ||
-                    resources.contains(new ResourceLocation(newX, newY)))) {
-                List<SimpleUnit> newUnitList;
-                if (footmen.contains(unit)) {
-                    newUnitList = new ArrayList<>(footmen);
-                } else {
-                    newUnitList = new ArrayList<>(archers);
+            return new Pair<>(newUnit, null);
+
+        } else if (action instanceof TargetedAction) {
+            TargetedAction targetedAction = (TargetedAction) action;
+
+            // Find enemy unit
+            SimpleUnit targetedUnit = null;
+            for (SimpleUnit footman : this.footmen) {
+                if (footman.getId() == targetedAction.getTargetId()) {
+                    targetedUnit = footman;
                 }
-                newUnitList.remove(unit);
-                newUnitList.add(newUnit);
             }
+
+            for (SimpleUnit archer : this.archers) {
+                if (archer.getId() == targetedAction.getTargetId()) {
+                    targetedUnit = archer;
+                }
+            }
+
+            SimpleUnit newTargetedUnit = new SimpleUnit(targetedUnit.getId(),
+                    targetedUnit.getX(),
+                    targetedUnit.getY(),
+                    targetedUnit.getBaseHealth(),
+                    targetedUnit.getCurrentHealth() - unit.getBasicAttack(),
+                    targetedUnit.getBasicAttack(),
+                    targetedUnit.getRange());
+
+            return new Pair<>(unit, newTargetedUnit);
         }
 
-        return allPossiblePositions;
+        // TODO: Throw exception?
+        return null;
+    }
+
+    /**
+     * Creates a new enemy list, updating the old one.
+     * @param unit1 The first unit, may be null
+     * @param unit2 The second unit, may be null
+     * @param enemyList The list of enemy units that are to be updated
+     * @return A updated enemy list
+     */
+    private List<SimpleUnit> createNewEnemyList(SimpleUnit unit1, SimpleUnit unit2, List<SimpleUnit> enemyList) {
+        List<SimpleUnit> newEnemyList = new ArrayList<>(enemyList);
+
+        if (unit1 != null) {
+            int index = findIndexOfUnit(unit1, enemyList);
+            newEnemyList.remove(index);
+            newEnemyList.add(unit1);
+        }
+
+        if (unit2 != null) {
+            int index = findIndexOfUnit(unit2, enemyList);
+            newEnemyList.remove(index);
+            newEnemyList.add(unit2);
+        }
+
+        return newEnemyList;
+    }
+
+    /**
+     * Finds the index of the unit by id.
+     * @param unit the unit being searched for
+     * @param unitList the list the unit is contained in
+     * @return the index of the unit in the unitList
+     */
+    private int findIndexOfUnit(SimpleUnit unit, List<SimpleUnit> unitList) {
+        int index = 0;
+        for (SimpleUnit newUnit : unitList) {
+            if (unit.getId() == newUnit.getId()) {
+                return index;
+            }
+            index += 1;
+        }
+        return -1;
     }
 
     public int getPlayersTurn() {
@@ -237,6 +385,16 @@ public class GameState {
             this.currentHealth = currentHealth;
             this.basicAttack = basicAttack;
             this.range = range;
+        }
+
+        /**
+         * Returns true if this unit is located at (x, y)
+         * @param x the x coordinate
+         * @param y the y coordinate
+         * @return true if this is located at (x, y)
+         */
+        public boolean isLocated(int x, int y) {
+            return this.x == x && this.y == y;
         }
 
         @Override
