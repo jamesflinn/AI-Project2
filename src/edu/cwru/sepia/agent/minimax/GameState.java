@@ -367,7 +367,7 @@ public class GameState {
     /**
      * Represents a unit, but only has the fields necessary for the Minimax algorithm.
      */
-    private class SimpleUnit {
+    public class SimpleUnit {
         private int id;
         private int x;
         private int y;

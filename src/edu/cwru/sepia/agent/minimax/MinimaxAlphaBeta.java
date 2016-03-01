@@ -122,9 +122,17 @@ public class MinimaxAlphaBeta extends Agent {
             int value = 0;
             for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
 
-                // if this is an attack then good
+                // if this is an attack then best
                 if (action.getValue().getType() == ActionType.PRIMITIVEATTACK) {
-                    value += 1;
+                    value += 1000;
+                }
+
+                // give each state a value based upon distance the footman are from the archers
+                for (GameState.SimpleUnit footman : child.state.getFootmen()) {
+                    for (GameState.SimpleUnit archer : child.state.getArchers()) {
+                     //chebyshev distance
+                    }
+
                 }
 
                 // if we are moving away from the archer then very bad
@@ -152,6 +160,22 @@ public class MinimaxAlphaBeta extends Agent {
         }
 
         return orderedChildren;
+    }
+
+    /**
+     * Computes the chebyshev distance between two units
+     *
+     * @param first  The first unit
+     * @param second The second unit
+     * @return       The chebyshev distance betwee the two units.
+     */
+    private int chebyshev(GameState.SimpleUnit first, GameState.SimpleUnit second) {
+
+        int deltaX = Math.abs(first.getX() - second.getX());
+        int deltaY = Math.abs(first.getX() - second.getY());
+
+        return deltaX < deltaY ? deltaY : deltaX;
+
     }
 
     /**
