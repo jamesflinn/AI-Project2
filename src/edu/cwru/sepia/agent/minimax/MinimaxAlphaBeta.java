@@ -34,11 +34,13 @@ public class MinimaxAlphaBeta extends Agent {
 
     @Override
     public Map<Integer, Action> middleStep(State.StateView newstate, History.HistoryView statehistory) {
+
         GameStateChild bestChild = alphaBetaSearch(new GameStateChild(newstate),
                 numPlys,
                 Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY);
 
+        System.out.println(bestChild.action);
         return bestChild.action;
     }
 
@@ -73,15 +75,33 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The best child of this node with updated values
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta) {
-
         if (depth == 0 || isLeafNode(node)) {
             return node;
+        }
+
+        double value = 0;
+        GameStateChild bestChild = node;
+
+        for (GameStateChild child : node.state.getChildren()) {
+            double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+            bestChild = childValue > value ? child : bestChild;
+            value = childValue > value ? childValue : value;
+        }
+
+        return bestChild;
+    }
+
+    public double alphaBetaValue(GameStateChild node, int depth, double alpha, double beta) {
+        if (depth == 0 || isLeafNode(node)) {
+            //System.out.println("returning: " + node.action.toString());
+            return node.state.getUtility();
         }
 
         if (isMaxNode(node)) {
             double value = Double.NEGATIVE_INFINITY;
 
             for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+                System.out.println(child.action);
                 value = Math.max(value, alphaBetaSearch(child, depth - 1, alpha, beta).state.getUtility());
                 alpha = Math.max(alpha, value);
 
@@ -89,6 +109,9 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
+
+            return value;
+
         } else {
             double value = Double.POSITIVE_INFINITY;
 
@@ -100,8 +123,9 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
+
+            return value;
         }
-        return node;
     }
 
     /**
@@ -149,7 +173,7 @@ public class MinimaxAlphaBeta extends Agent {
                 }
             }
 
-            heuristicValues.add(new Pair<Integer, GameStateChild>(value, child));
+            heuristicValues.add(new Pair<>(value, child));
         }
 
 
@@ -167,10 +191,10 @@ public class MinimaxAlphaBeta extends Agent {
             orderedChildren.add(heuristic.getValue());
         }
 
-        for (int i = 0; i < orderedChildren.size(); i++) {
-            System.out.println(orderedChildren.get(i).state.toString());
-            System.out.printf("value for state: %d = %d%n", i, heuristicValues.get(i).getKey());
-        }
+//        for (int i = 0; i < orderedChildren.size(); i++) {
+//            System.out.println(orderedChildren.get(i).state.toString());
+//            System.out.printf("value for state: %d = %d%n", i, heuristicValues.get(i).getKey());
+//        }
 
         return orderedChildren;
     }
@@ -206,6 +230,6 @@ public class MinimaxAlphaBeta extends Agent {
      * @return true if the node is a max node.
      */
     private boolean isMaxNode(GameStateChild node) {
-        return true;
+        return (node.state.getTurnNumber() % 2) == 0;
     }
 }
