@@ -92,6 +92,7 @@ public class MinimaxAlphaBeta extends Agent {
             }
         } else {
             // TODO Not sure if this min is necessary
+            // does this method get called on MIN turns?
             value = 70000;
 
             for (GameStateChild child : node.state.getChildren()) {
