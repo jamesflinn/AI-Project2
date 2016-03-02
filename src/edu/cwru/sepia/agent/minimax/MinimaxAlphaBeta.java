@@ -6,6 +6,7 @@ import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
+import javafx.util.Pair;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,6 +73,7 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The best child of this node with updated values
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta) {
+
         if (depth == 0 || isLeafNode(node)) {
             return node;
         }
@@ -117,7 +119,9 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
 
-        Map<Integer, GameStateChild> heuristicValues = new HashMap<>();
+        System.out.printf("number of states: %d\n", children.size());
+
+        ArrayList<Pair<Integer, GameStateChild>> heuristicValues = new ArrayList();
         for (GameStateChild child : children) {
             int value = 0;
 
@@ -147,19 +151,31 @@ public class MinimaxAlphaBeta extends Agent {
                 }
             }
 
-            heuristicValues.put(value, child);
+
+            heuristicValues.add(new Pair<Integer, GameStateChild>(value, child));
+            System.out.printf("putting value: %d\n", heuristicValues.size());
         }
 
-        // TODO This is a little roundabout way to order the children
 
-        ArrayList<Integer> keys = new ArrayList<>(heuristicValues.keySet());
-        Collections.sort(keys);
-        Collections.reverse(keys);
+        Comparator<Pair<Integer, GameStateChild>> c = new Comparator<Pair<Integer, GameStateChild>>() {
+            @Override
+            public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
 
+                return o1.getKey() - o2.getKey();
+            }
+        };
+
+        Collections.sort(heuristicValues, c);
         ArrayList<GameStateChild> orderedChildren = new ArrayList<>();
+        for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
+            orderedChildren.add(heuristic.getValue());
+        }
 
-        for (Integer heuristic : keys) {
-            orderedChildren.add(heuristicValues.get(heuristic));
+        System.out.printf("number ordered = %d\n", orderedChildren.size());
+
+        for (int i = 0; i < orderedChildren.size(); i++) {
+            System.out.println(orderedChildren.get(i).state.toString());
+            System.out.printf("value for state: %d = %d%n", i, heuristicValues.get(i).getKey());
         }
 
         return orderedChildren;

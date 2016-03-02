@@ -112,18 +112,22 @@ public class GameState {
      * your features should be as fast as possible to compute. If the features are slow then you will be
      * able to do less plys in a turn.
      * <p>
-     * Add a good comment about what is in your utility and why you chose those features.
+     *  TODO Add a good comment about what is in your utility and why you chose those features.
      *
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
 
         int utility = 0;
-        // If no more archers then best
-        utility += -100 * archers.size();
+        // archers are bad
+        for (SimpleUnit archer : archers) {
+            utility += -5 * archer.getCurrentHealth();
+        }
 
-        // footman are good.
-        utility += 100 * footmen.size();
+        // footmen are good
+        for (SimpleUnit footman : footmen) {
+            utility += 5 * footman.getCurrentHealth();
+        }
 
         return utility;
     }
@@ -206,7 +210,6 @@ public class GameState {
 
         return children;
     }
-
 
     /**
      * Finds all possible actions for a given unit
@@ -372,6 +375,23 @@ public class GameState {
         return resources;
     }
 
+    public String toString() {
+
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("FOOTMEN:\n");
+        for (SimpleUnit footman : footmen) {
+            builder.append(footman.toString());
+        }
+
+        builder.append("\nARCHERS:\n");
+        for (SimpleUnit archer : archers) {
+            builder.append(archer.toString());
+        }
+
+        return builder.toString();
+    }
+
     /**
      * Represents a unit, but only has the fields necessary for the Minimax algorithm.
      */
@@ -452,6 +472,14 @@ public class GameState {
 
         public int getRange() {
             return range;
+        }
+
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("location: (").append(x).append(", ").append(y).append(")\n");
+            builder.append("health: ").append(currentHealth).append(" / ").append(baseHealth).append("\n");
+
+            return builder.toString();
         }
     }
 
