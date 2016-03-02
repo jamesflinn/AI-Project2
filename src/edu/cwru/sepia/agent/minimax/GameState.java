@@ -266,6 +266,8 @@ public class GameState {
 
         // Find all attack actions
         List<Pair<Integer, Integer>> possibleTargets = findAllPossibleTargets(unit.getLocation(), enemyUnits);
+
+        System.out.println("POSSIBLE TARGETS SIZE: " + possibleTargets.size());
         for (Pair<Integer, Integer> possibleTarget : possibleTargets) {
             int targetId = possibleTarget.a;
             int distance = possibleTarget.b;
@@ -350,6 +352,7 @@ public class GameState {
                     targetedUnit.getBasicAttack(),
                     targetedUnit.getRange());
 
+            System.out.println("Targeted unit: " + targetedUnit);
             return new Pair<>(unit, newTargetedUnit);
         }
 
@@ -404,17 +407,17 @@ public class GameState {
     private boolean unitIsLocated(Pair<Integer, Integer> location) {
         for (SimpleUnit footman : footmen) {
             if (footman.getLocation().equals(location)) {
-                return false;
+                return true;
             }
         }
 
         for (SimpleUnit archer : archers) {
             if (archer.getLocation().equals(location)) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     /**
