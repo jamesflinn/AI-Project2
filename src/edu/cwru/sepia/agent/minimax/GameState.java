@@ -516,15 +516,6 @@ public class GameState {
             return range == that.getRange();
         }
 
-        @Override
-        public String toString() {
-            return "SimpleUnit{" +
-                    "y=" + y +
-                    ", id=" + id +
-                    ", x=" + x +
-                    '}';
-        }
-
         public int getId() {
             return id;
         }
@@ -557,6 +548,7 @@ public class GameState {
             return range;
         }
 
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("location: (").append(x).append(", ").append(y).append(")\n");
