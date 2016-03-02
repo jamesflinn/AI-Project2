@@ -120,14 +120,18 @@ public class GameState {
      */
     public double getUtility() {
 
+        // TODO make this faster
+        // highly unoptimized right now
         int utility = 0;
 
-        int archerFeature = 0;
-        int footmanFeature = 0;
+        int archerFeature   = 0;
+        int footmanFeature  = 0;
         int distanceFeature = 0;
-        int minDistFeature = 70000;
+        int minDistFeature  = 70000;
         int archDistFeature = 0;
         int wallDistFeature = 0;
+        int columnFeature   = 0;
+        int rowFeature      = 0;
 
         // archers are bad
         for (SimpleUnit archer : archers) {
@@ -168,14 +172,26 @@ public class GameState {
             wallDistFeature += distanceToWalls(archer);
         }
 
+        // don't want footmen on same row / column
+        for (SimpleUnit footman : footmen) {
+            for (SimpleUnit footman2 : footmen) {
+                if (!footman.equals(footman2)) {
+                    columnFeature -= footman.y == footman2.y ? 1 : 0;
+                    rowFeature    -= footman.x == footman2.x ? 1 : 0;
+                }
+            }
+        }
+
         //add utilities
 
         utility -= archerFeature;
         utility += footmanFeature;
         utility -= distanceFeature;
-        // utility -= minDistFeature;
+        //utility -= minDistFeature;
         utility -= archDistFeature;
         utility -= wallDistFeature;
+        utility += rowFeature;
+        utility += columnFeature;
 
         return utility;
     }

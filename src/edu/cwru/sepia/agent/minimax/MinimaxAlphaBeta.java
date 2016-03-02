@@ -86,6 +86,9 @@ public class MinimaxAlphaBeta extends Agent {
 
             for (GameStateChild child : node.state.getChildren()) {
                 double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+                if (childValue == value) {
+                    bestChild = Math.random() * 100 > 50 ? child : bestChild;
+                }
                 bestChild = childValue > value ? child : bestChild;
                 value = childValue > value ? childValue : value;
             }
