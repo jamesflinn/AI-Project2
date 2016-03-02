@@ -83,6 +83,7 @@ public class MinimaxAlphaBeta extends Agent {
         GameStateChild bestChild = node;
 
         for (GameStateChild child : node.state.getChildren()) {
+            System.out.println(child.action);
             double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
             bestChild = childValue > value ? child : bestChild;
             value = childValue > value ? childValue : value;
@@ -91,6 +92,14 @@ public class MinimaxAlphaBeta extends Agent {
         return bestChild;
     }
 
+    /**
+     * Returns the value of a node by applying the alphabeta search algorithm
+     * @param node  The action and state to search from
+     * @param depth The remaining number of plys under this node
+     * @param alpha The current best value for the maximizing node from this node to the root
+     * @param beta  The current best value for the minimizing node from this node to the root
+     * @return The value of this node
+     */
     public double alphaBetaValue(GameStateChild node, int depth, double alpha, double beta) {
         if (depth == 0 || isLeafNode(node)) {
             //System.out.println("returning: " + node.action.toString());
@@ -190,11 +199,6 @@ public class MinimaxAlphaBeta extends Agent {
         for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
             orderedChildren.add(heuristic.getValue());
         }
-
-//        for (int i = 0; i < orderedChildren.size(); i++) {
-//            System.out.println(orderedChildren.get(i).state.toString());
-//            System.out.printf("value for state: %d = %d%n", i, heuristicValues.get(i).getKey());
-//        }
 
         return orderedChildren;
     }

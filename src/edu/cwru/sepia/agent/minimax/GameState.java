@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class GameState {
 
-    private int playersTurn;
+    private int turnNumber;
     private int xExtent;
     private int yExtent;
 
@@ -28,7 +28,6 @@ public class GameState {
     private List<SimpleUnit> archers;
 
     private List<ResourceLocation> resources;
-
 
     /**
      * You will implement this constructor. It will
@@ -52,6 +51,9 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
+
+        this.turnNumber = state.getTurnNumber();
+
         this.xExtent = state.getXExtent();
         this.yExtent = state.getYExtent();
 
@@ -92,7 +94,7 @@ public class GameState {
         this.xExtent = oldGameState.getXExtent();
         this.yExtent = oldGameState.getYExtent();
         this.resources = oldGameState.getResources();
-        this.playersTurn = oldGameState.getPlayersTurn() == 0 ? 1 : 0;
+        this.turnNumber = oldGameState.getTurnNumber() + 1;
 
         this.footmen = footmen;
         this.archers = archers;
@@ -127,6 +129,26 @@ public class GameState {
         // footmen are good
         for (SimpleUnit footman : footmen) {
             utility += 5 * footman.getCurrentHealth();
+            for (SimpleUnit archer : archers) {
+                utility -= taxicab(footman, archer);
+            }
+        }
+
+        // distance to archers is bad
+        // Heuristics based upon units
+        for (SimpleUnit footman : footmen) {
+
+            // give each state a value based upon distance the footman are from the archers
+            for (GameState.SimpleUnit archer : archers) {
+                utility -= taxicab(footman, archer);
+            }
+
+            // if we are moving into a resource then very bad
+            for (GameState.ResourceLocation resource : resources) {
+                if (resource.getLocation().equals(footman.getLocation())) {
+                    utility -= 10000;
+                }
+            }
         }
 
         return utility;
@@ -151,7 +173,7 @@ public class GameState {
     public List<GameStateChild> getChildren() {
         List<GameStateChild> children;
 
-        if (playersTurn == 0) {
+        if (turnNumber % 2 == 0) {
             // footmen
             children = getGameStateChildren(footmen.get(0), footmen.get(1), archers);
         } else {
@@ -159,6 +181,7 @@ public class GameState {
             SimpleUnit archer2 = archers.size() == 2 ? archers.get(1) : null;
             children = getGameStateChildren(archers.get(0), archer2, footmen);
         }
+
         return children;
     }
 
@@ -351,8 +374,8 @@ public class GameState {
         return -1;
     }
 
-    public int getPlayersTurn() {
-        return playersTurn;
+    public int getTurnNumber() {
+        return this.turnNumber;
     }
 
     public int getXExtent() {
@@ -390,6 +413,22 @@ public class GameState {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Computes the taxicab distance between two units
+     *
+     * @param first  The first unit
+     * @param second The second unit
+     * @return       The taxicab distance between the two units.
+     */
+    private int taxicab(GameState.SimpleUnit first, GameState.SimpleUnit second) {
+
+        int deltaX = Math.abs(first.getX() - second.getX());
+        int deltaY = Math.abs(first.getY() - second.getY());
+
+        return deltaX + deltaY;
+
     }
 
     /**
