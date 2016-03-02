@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class GameState {
 
-    private int turnNumber;
+    private boolean maxNode;
     private int xExtent;
     private int yExtent;
 
@@ -52,7 +52,7 @@ public class GameState {
      */
     public GameState(State.StateView state) {
 
-        this.turnNumber = state.getTurnNumber();
+        this.maxNode = true;
 
         this.xExtent = state.getXExtent();
         this.yExtent = state.getYExtent();
@@ -94,7 +94,7 @@ public class GameState {
         this.xExtent = oldGameState.getXExtent();
         this.yExtent = oldGameState.getYExtent();
         this.resources = oldGameState.getResources();
-        this.turnNumber = oldGameState.getTurnNumber() + 1;
+        this.maxNode = !oldGameState.maxNode;
 
         this.footmen = footmen;
         this.archers = archers;
@@ -121,35 +121,61 @@ public class GameState {
     public double getUtility() {
 
         int utility = 0;
+
+        int archerFeature = 0;
+        int footmanFeature = 0;
+        int distanceFeature = 0;
+        int minDistFeature = 70000;
+        int archDistFeature = 0;
+        int wallDistFeature = 0;
+
         // archers are bad
         for (SimpleUnit archer : archers) {
-            utility += -5 * archer.getCurrentHealth();
+            archerFeature += archer.getCurrentHealth();
         }
 
         // footmen are good
         for (SimpleUnit footman : footmen) {
-            utility += 5 * footman.getCurrentHealth();
-            for (SimpleUnit archer : archers) {
-                utility -= taxicab(footman, archer);
-            }
+            footmanFeature += footman.getCurrentHealth();
         }
 
         // distance to archers is bad
-        // Heuristics based upon units
         for (SimpleUnit footman : footmen) {
-
-            // give each state a value based upon distance the footman are from the archers
-            for (GameState.SimpleUnit archer : archers) {
-                utility -= taxicab(footman, archer);
-            }
-
-            // if we are moving into a resource then very bad
-            for (GameState.ResourceLocation resource : resources) {
-                if (resource.getLocation().equals(footman.getLocation())) {
-                    utility -= 10000;
-                }
+            for (SimpleUnit archer : archers) {
+                distanceFeature += taxicab(footman, archer);
             }
         }
+
+        // minium distance to one archer
+        for (SimpleUnit archer : archers) {
+            int dist = 0;
+            // minimum distance to one archer
+            for (SimpleUnit footman : footmen) {
+                dist += taxicab(footman, archer);
+            }
+            minDistFeature = dist < minDistFeature ? dist : minDistFeature;
+        }
+
+        // archer distance from each other
+        for (SimpleUnit archer : archers) {
+            for (SimpleUnit archer2 : archers) {
+                archDistFeature += taxicab(archer, archer2);
+            }
+        }
+
+        // archer distance to walls
+        for (SimpleUnit archer : archers) {
+            wallDistFeature += distanceToWalls(archer);
+        }
+
+        //add utilities
+
+        utility -= archerFeature;
+        utility += footmanFeature;
+        utility -= distanceFeature;
+        // utility -= minDistFeature;
+        utility -= archDistFeature;
+        utility -= wallDistFeature;
 
         return utility;
     }
@@ -173,7 +199,7 @@ public class GameState {
     public List<GameStateChild> getChildren() {
         List<GameStateChild> children;
 
-        if (turnNumber % 2 == 0) {
+        if (maxNode) {
             // footmen
             children = getGameStateChildren(footmen, archers);
         } else {
@@ -409,8 +435,8 @@ public class GameState {
         return -1;
     }
 
-    public int getTurnNumber() {
-        return this.turnNumber;
+    public boolean getMaxNode() {
+        return this.maxNode;
     }
 
     public int getXExtent() {
@@ -463,6 +489,20 @@ public class GameState {
         int deltaY = Math.abs(first.getY() - second.getY());
 
         return deltaX + deltaY;
+
+    }
+
+    /**
+     * This calculates the distance the the two closest walls for a unit
+     * @param unit the unit we want the distance from
+     * @return     the distance to the two closest walls summed
+     */
+    private int distanceToWalls(SimpleUnit unit) {
+
+        int distToYWall = Math.min(unit.x, xExtent - unit.x);
+        int distToXWall = Math.min(unit.y, yExtent - unit.y);
+
+        return distToXWall + distToYWall;
 
     }
 

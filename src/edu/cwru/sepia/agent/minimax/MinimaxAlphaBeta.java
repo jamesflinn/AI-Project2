@@ -40,7 +40,6 @@ public class MinimaxAlphaBeta extends Agent {
                 Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY);
 
-        System.out.println(bestChild.action);
         return bestChild.action;
     }
 
@@ -90,7 +89,8 @@ public class MinimaxAlphaBeta extends Agent {
                 bestChild = childValue > value ? child : bestChild;
                 value = childValue > value ? childValue : value;
             }
-        } else {
+        }
+        else {
             // TODO Not sure if this min is necessary
             // does this method get called on MIN turns?
             value = 70000;
@@ -102,7 +102,8 @@ public class MinimaxAlphaBeta extends Agent {
             }
         }
 
-        System.out.printf("value: %f\n", value);
+        System.out.printf("utility: %f\n", bestChild.state.getUtility());
+        System.out.printf("%s\n\n", bestChild.action.toString());
         return bestChild;
     }
 
@@ -248,6 +249,6 @@ public class MinimaxAlphaBeta extends Agent {
      * @return true if the node is a max node.
      */
     private boolean isMaxNode(GameStateChild node) {
-        return (node.state.getTurnNumber() % 2) == 0;
+        return node.state.getMaxNode();
     }
 }
