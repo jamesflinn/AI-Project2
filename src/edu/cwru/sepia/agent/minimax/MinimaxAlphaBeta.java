@@ -191,7 +191,7 @@ public class MinimaxAlphaBeta extends Agent {
     private int taxicab(GameState.SimpleUnit first, GameState.SimpleUnit second) {
 
         int deltaX = Math.abs(first.getX() - second.getX());
-        int deltaY = Math.abs(first.getX() - second.getY());
+        int deltaY = Math.abs(first.getY() - second.getY());
 
         return deltaX + deltaY;
 
