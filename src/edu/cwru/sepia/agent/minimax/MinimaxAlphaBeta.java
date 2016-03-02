@@ -132,14 +132,13 @@ public class MinimaxAlphaBeta extends Agent {
                     for (GameState.SimpleUnit archer : child.state.getArchers()) {
                         value -= chebyshev(footman, archer);
                     }
+
+                    // if we are moving into a resource then very bad
+                    // for (GameState.ResourceLocation resource : )
                 }
 
-                // if we are moving into a resource then very bad
-
             }
-
             heuristicValues.put(value, child);
-
         }
 
         // This is a little roundabout way to order the children

@@ -426,6 +426,10 @@ public class GameState {
             return y;
         }
 
+        public Pair<Integer, Integer> getLocation() {
+            return new Pair<Integer, Integer>(x, y);
+        }
+
         public int getBaseHealth() {
             return baseHealth;
         }
@@ -446,13 +450,17 @@ public class GameState {
     /**
      * Simple class to hold the locations of resources.
      */
-    private class ResourceLocation {
+    public class ResourceLocation {
         public int x;
         public int y;
 
         public ResourceLocation(int x, int y) {
             this.x = x;
             this.y = y;
+        }
+
+        public Pair<Integer, Integer> getLocation() {
+            return new Pair<Integer, Integer>(x, y);
         }
 
         @Override
