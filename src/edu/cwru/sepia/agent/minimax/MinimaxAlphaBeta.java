@@ -124,7 +124,7 @@ public class MinimaxAlphaBeta extends Agent {
 
             for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
                 System.out.println(child.action);
-                value = Math.max(value, alphaBetaSearch(child, depth - 1, alpha, beta).state.getUtility());
+                value = Math.max(value, alphaBetaValue(child, depth - 1, alpha, beta));
                 alpha = Math.max(alpha, value);
 
                 if (beta <= alpha) {
@@ -138,7 +138,7 @@ public class MinimaxAlphaBeta extends Agent {
             double value = Double.POSITIVE_INFINITY;
 
             for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
-                value = Math.min(value, alphaBetaSearch(child, depth - 1, alpha, beta).state.getUtility());
+                value = Math.min(value, alphaBetaValue(child, depth - 1, alpha, beta));
                 beta = Math.min(beta, value);
 
                 if (beta <= alpha) {
