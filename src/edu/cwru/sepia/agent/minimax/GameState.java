@@ -185,7 +185,6 @@ public class GameState {
     }
 
     public List<GameStateChild> getGameStateChildren(List<SimpleUnit> units, List<SimpleUnit> enemyUnits) {
-        // TODO: This only works when there are 2 units for a player, must adjust for when there is only one
         List<GameStateChild> children = new ArrayList<>();
         List<List<Action>> unitActionsList = new ArrayList<>();
         // Calculate all possible actions
@@ -228,6 +227,8 @@ public class GameState {
             children.add(new GameStateChild(actionMap, newState));
         }
 
+        System.out.println("SIZE: " + children.size());
+
         return children;
     }
 
@@ -240,6 +241,7 @@ public class GameState {
     private List<Action> findAllActionsForUnit(SimpleUnit unit, List<SimpleUnit> enemyUnits) {
         List<Action> allPossibleActions = new ArrayList<>();
 
+        // Find all move actions
         for (Direction direction : Direction.values()) {
             // Only move up, down, left, or right
             if (direction.equals(Direction.NORTHEAST) ||
@@ -256,18 +258,19 @@ public class GameState {
                     newY >= yExtent ||
                     newX < 0 ||
                     newY < 0 ||
-                    resources.contains(new ResourceLocation(newX, newY)))) {
-                boolean noEnemy = true;
-                for (SimpleUnit enemyUnit : enemyUnits) {
-                    if (enemyUnit.isLocated(newX, newY)) {
-                        // TODO: This only allows footmen to attack archers. Must include range, also movement must change
-                        noEnemy = false;
-                        allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), enemyUnit.getId()));
-                    }
-                }
-                if (noEnemy) {
-                    allPossibleActions.add(Action.createPrimitiveMove(unit.getId(), direction));
-                }
+                    resources.contains(new ResourceLocation(newX, newY)) ||
+                    unitIsLocated(new Pair<>(newX, newY)))) {
+                allPossibleActions.add(Action.createPrimitiveMove(unit.getId(), direction));
+            }
+        }
+
+        // Find all attack actions
+        List<Pair<Integer, Integer>> possibleTargets = findAllPossibleTargets(unit.getLocation(), enemyUnits);
+        for (Pair<Integer, Integer> possibleTarget : possibleTargets) {
+            int targetId = possibleTarget.a;
+            int distance = possibleTarget.b;
+            if (unit.getRange() >= distance) {
+                allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), targetId));
             }
         }
 
@@ -369,6 +372,49 @@ public class GameState {
             newEnemyList.add(unit);
         }
         return newEnemyList;
+    }
+
+    /**
+     * Finds all possible targets for a given unit based on their location. Range is not factored.
+     * @param location The location of the attacking unit
+     * @param enemies The list of enemies who could possibly be attacked
+     * @return List of tuples (targetID, range)
+     */
+    private List<Pair<Integer, Integer>> findAllPossibleTargets(Pair<Integer, Integer> location, List<SimpleUnit> enemies) {
+        List<Pair<Integer, Integer>> possibleTargets = new ArrayList<>();
+        for (SimpleUnit enemy : enemies) {
+            if (Objects.equals(enemy.getLocation().a, location.a)) {
+                // x coordinates are equal
+                int distance = Math.abs(location.b - enemy.getLocation().b);
+                possibleTargets.add(new Pair<>(enemy.getId(), distance));
+            } else if (Objects.equals(enemy.getLocation().b, location.b)) {
+                // y coordinates are equal
+                int distance = Math.abs(location.a - enemy.getLocation().a);
+                possibleTargets.add(new Pair<>(enemy.getId(), distance));
+            }
+        }
+        return possibleTargets;
+    }
+
+    /**
+     * Checks if a unit is located at the specified location
+     * @param location the location being checked
+     * @return true if there is a unit located at location
+     */
+    private boolean unitIsLocated(Pair<Integer, Integer> location) {
+        for (SimpleUnit footman : footmen) {
+            if (footman.getLocation().equals(location)) {
+                return false;
+            }
+        }
+
+        for (SimpleUnit archer : archers) {
+            if (archer.getLocation().equals(location)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
