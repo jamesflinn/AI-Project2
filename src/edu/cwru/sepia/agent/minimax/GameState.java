@@ -175,58 +175,55 @@ public class GameState {
 
         if (turnNumber % 2 == 0) {
             // footmen
-            children = getGameStateChildren(footmen.get(0), footmen.get(1), archers);
+            children = getGameStateChildren(footmen, archers);
         } else {
             // archers
-            SimpleUnit archer2 = archers.size() == 2 ? archers.get(1) : null;
-            children = getGameStateChildren(archers.get(0), archer2, footmen);
+            children = getGameStateChildren(archers, footmen);
         }
 
         return children;
     }
 
-    public List<GameStateChild> getGameStateChildren(SimpleUnit unit1, SimpleUnit unit2, List<SimpleUnit> enemyUnits) {
+    public List<GameStateChild> getGameStateChildren(List<SimpleUnit> units, List<SimpleUnit> enemyUnits) {
         // TODO: This only works when there are 2 units for a player, must adjust for when there is only one
         List<GameStateChild> children = new ArrayList<>();
+        List<List<Action>> unitActionsList = new ArrayList<>();
         // Calculate all possible actions
-        List<Action> unit1Actions = findAllActionsForUnit(unit1, enemyUnits);
-        List<Action> unit2Actions = findAllActionsForUnit(unit2, enemyUnits);
-
-        // Cartesian product of unit1 and unit2's actions
-        List<Pair<Action, Action>> actions = new ArrayList<>();
-        for (Action unit1Action : unit1Actions) {
-            for (Action unit2Action : unit2Actions) {
-                actions.add(new Pair<>(unit1Action, unit2Action));
-            }
+        for (SimpleUnit unit : units) {
+            unitActionsList.add(findAllActionsForUnit(unit, enemyUnits));
         }
 
+        // Cartesian product of all unit's actions
+        List<List<Action>> actionsList = cartesianProduct(unitActionsList);
+
         // Get new state from actions
-        for (Pair<Action, Action> action : actions) {
-            Action unit1Action = action.a;
-            Action unit2Action = action.b;
-
-            // First unit in pair is always friendly unit, second is enemy, if action is TargetedAction, null otherwise
-            Pair<SimpleUnit, SimpleUnit> unit1Pair = createNewUnitFromAction(unit1, unit1Action);
-            Pair<SimpleUnit, SimpleUnit> unit2Pair = createNewUnitFromAction(unit2, unit2Action);
-            // This list contains the units for a single player
-            List<SimpleUnit> newUnitList = new ArrayList<>();
-            newUnitList.add(unit1Pair.a);
-            newUnitList.add(unit2Pair.a);
-
-            // Create new GameState
-            GameState newState;
-            if (enemyUnits.equals(this.footmen)) {
-                List<SimpleUnit> newFootmen = createNewEnemyList(unit1Pair.b, unit2Pair.b, this.footmen);
-                newState = new GameState(this, newFootmen, newUnitList);
+        for (List<Action> actions : actionsList) {
+            List<SimpleUnit> newEnemyUnits;
+            if (enemyUnits.equals(footmen)) {
+                newEnemyUnits = new ArrayList<>(footmen);
             } else {
-                List<SimpleUnit> newArchers = createNewEnemyList(unit1Pair.b, unit2Pair.b, this.archers);
-                newState = new GameState(this, newUnitList, newArchers);
+                newEnemyUnits = new ArrayList<>(archers);
             }
 
-            // Create actions
+            List<SimpleUnit> newUnitList = new ArrayList<>();
+            for (Action action : actions) {
+                SimpleUnit unitFromAction = findUnitById(action.getUnitId());
+                Pair<SimpleUnit, SimpleUnit> unitPair = createNewUnitFromAction(unitFromAction, action);
+                newUnitList.add(unitPair.a);
+                newEnemyUnits = createNewEnemyList(unitPair.b, newEnemyUnits);
+            }
+
+            GameState newState;
+            if (enemyUnits.equals(footmen)) {
+                newState = new GameState(this, newEnemyUnits, newUnitList);
+            } else {
+                newState = new GameState(this, newUnitList, newEnemyUnits);
+            }
+
             Map<Integer, Action> actionMap = new HashMap<>();
-            actionMap.put(unit1.getId(), unit1Action);
-            actionMap.put(unit2.getId(), unit2Action);
+            for (Action action : actions) {
+                actionMap.put(action.getUnitId(), action);
+            }
 
             children.add(new GameStateChild(actionMap, newState));
         }
@@ -275,6 +272,31 @@ public class GameState {
         }
 
         return allPossibleActions;
+    }
+
+    /**
+     * Finds the cartesian product of each units's actions
+     * @param actionsList A list of each unit's actions
+     * @return The cartesian product of actions
+     */
+    private List<List<Action>> cartesianProduct(List<List<Action>> actionsList) {
+        List<List<Action>> combinations = new ArrayList<>();
+        for (List<Action> actions : actionsList) {
+            List<List<Action>> extraColumnCombinations = new ArrayList<>();
+            for (Action action : actions) {
+                if (combinations.isEmpty()) {
+                    extraColumnCombinations.add(Arrays.asList(action));
+                } else {
+                    for (List<Action> productList : combinations) {
+                        List<Action> newProductList = new ArrayList<>(productList);
+                        newProductList.add(action);
+                        extraColumnCombinations.add(newProductList);
+                    }
+                }
+            }
+            combinations = extraColumnCombinations;
+        }
+        return combinations;
     }
 
     /**
@@ -334,27 +356,40 @@ public class GameState {
 
     /**
      * Creates a new enemy list, updating the old one.
-     * @param unit1 The first unit, may be null
-     * @param unit2 The second unit, may be null
+     * @param unit The unit, may be null
      * @param enemyList The list of enemy units that are to be updated
      * @return A updated enemy list
      */
-    private List<SimpleUnit> createNewEnemyList(SimpleUnit unit1, SimpleUnit unit2, List<SimpleUnit> enemyList) {
+    private List<SimpleUnit> createNewEnemyList(SimpleUnit unit, List<SimpleUnit> enemyList) {
         List<SimpleUnit> newEnemyList = new ArrayList<>(enemyList);
 
-        if (unit1 != null) {
-            int index = findIndexOfUnit(unit1, enemyList);
+        if (unit != null) {
+            int index = findIndexOfUnit(unit, enemyList);
             newEnemyList.remove(index);
-            newEnemyList.add(unit1);
+            newEnemyList.add(unit);
         }
-
-        if (unit2 != null) {
-            int index = findIndexOfUnit(unit2, enemyList);
-            newEnemyList.remove(index);
-            newEnemyList.add(unit2);
-        }
-
         return newEnemyList;
+    }
+
+    /**
+     * Finds a unit from the footmen and archers list and returns it.
+     * @param id the id of the unit
+     * @return the SimpleUnit
+     */
+    private SimpleUnit findUnitById(int id) {
+        for (SimpleUnit unit : footmen) {
+            if (unit.getId() == id) {
+                return unit;
+            }
+        }
+
+        for (SimpleUnit unit : archers) {
+            if (unit.getId() == id) {
+                return unit;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -513,6 +548,7 @@ public class GameState {
             return range;
         }
 
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("location: (").append(x).append(", ").append(y).append(")\n");
@@ -547,7 +583,6 @@ public class GameState {
 
             if (x != that.x) return false;
             return y == that.y;
-
         }
     }
 }
