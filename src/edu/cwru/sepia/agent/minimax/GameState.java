@@ -117,7 +117,15 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
-        return 0.0;
+
+        int utility = 0;
+        // If no more archers then best
+        utility += -100 * archers.size();
+
+        // footman are good.
+        utility += 100 * footmen.size();
+
+        return utility;
     }
 
     /**

@@ -112,7 +112,7 @@ public class MinimaxAlphaBeta extends Agent {
      * <p>
      * Include a good comment about what your heuristics are and why you chose them.
      *
-     * @param children
+     * @param children The list of children of the current state
      * @return The list of children sorted by your heuristic.
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
@@ -120,6 +120,8 @@ public class MinimaxAlphaBeta extends Agent {
         Map<Integer, GameStateChild> heuristicValues = new HashMap<>();
         for (GameStateChild child : children) {
             int value = 0;
+
+            // Heuristics based upon actions
             for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
 
                 // if this is an attack then best
@@ -127,28 +129,28 @@ public class MinimaxAlphaBeta extends Agent {
                     value += 1000;
                 }
 
-                // give each state a value based upon distance the footman are from the archers
-                for (GameState.SimpleUnit footman : child.state.getFootmen()) {
-                    for (GameState.SimpleUnit archer : child.state.getArchers()) {
-                        value -= taxicab(footman, archer);
-                    }
+            }
 
-                    // if we are moving into a resource then very bad
-                    for (GameState.ResourceLocation resource : child.state.getResources()) {
-                        if (resource.getLocation().equals(footman.getLocation())) {
-                            value -= 10000;
-                        }
-                    }
+            // Heuristics based upon units
+            for (GameState.SimpleUnit footman : child.state.getFootmen()) {
+
+                // give each state a value based upon distance the footman are from the archers
+                for (GameState.SimpleUnit archer : child.state.getArchers()) {
+                    value -= taxicab(footman, archer);
                 }
 
+                // if we are moving into a resource then very bad
+                for (GameState.ResourceLocation resource : child.state.getResources()) {
+                    if (resource.getLocation().equals(footman.getLocation())) {
+                        value -= 10000;
+                    }
+                }
             }
 
             heuristicValues.put(value, child);
         }
 
-        // This is a little roundabout way to order the children
-        // sort the keys in descending order based upon the value assigned
-        // then put each GameStateChild in the new list of gamestatechildren in order then return
+        // TODO This is a little roundabout way to order the children
 
         ArrayList<Integer> keys = new ArrayList<>(heuristicValues.keySet());
         Collections.sort(keys);
