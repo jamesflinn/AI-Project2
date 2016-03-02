@@ -91,7 +91,7 @@ public class MinimaxAlphaBeta extends Agent {
                 value = childValue > value ? childValue : value;
             }
         } else {
-            // TODO Not sure if his min is necessary
+            // TODO Not sure if this min is necessary
             value = 70000;
 
             for (GameStateChild child : node.state.getChildren()) {
