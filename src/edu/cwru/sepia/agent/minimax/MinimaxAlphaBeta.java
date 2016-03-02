@@ -79,16 +79,29 @@ public class MinimaxAlphaBeta extends Agent {
             return node;
         }
 
-        double value = 0;
+        double value;
         GameStateChild bestChild = node;
 
-        for (GameStateChild child : node.state.getChildren()) {
-            System.out.println(child.action);
-            double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
-            bestChild = childValue > value ? child : bestChild;
-            value = childValue > value ? childValue : value;
+        if (isMaxNode(node)) {
+            value = -70000;
+
+            for (GameStateChild child : node.state.getChildren()) {
+                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+                bestChild = childValue > value ? child : bestChild;
+                value = childValue > value ? childValue : value;
+            }
+        } else {
+            // TODO Not sure if his min is necessary
+            value = 70000;
+
+            for (GameStateChild child : node.state.getChildren()) {
+                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+                bestChild = childValue < value ? child : bestChild;
+                value = childValue < value ? childValue : value;
+            }
         }
 
+        System.out.printf("value: %f\n", value);
         return bestChild;
     }
 
