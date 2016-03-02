@@ -119,8 +119,6 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
 
-        System.out.printf("number of states: %d\n", children.size());
-
         ArrayList<Pair<Integer, GameStateChild>> heuristicValues = new ArrayList();
         for (GameStateChild child : children) {
             int value = 0;
@@ -151,9 +149,7 @@ public class MinimaxAlphaBeta extends Agent {
                 }
             }
 
-
             heuristicValues.add(new Pair<Integer, GameStateChild>(value, child));
-            System.out.printf("putting value: %d\n", heuristicValues.size());
         }
 
 
@@ -161,7 +157,7 @@ public class MinimaxAlphaBeta extends Agent {
             @Override
             public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
 
-                return o1.getKey() - o2.getKey();
+                return o2.getKey() - o1.getKey();
             }
         };
 
@@ -170,8 +166,6 @@ public class MinimaxAlphaBeta extends Agent {
         for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
             orderedChildren.add(heuristic.getValue());
         }
-
-        System.out.printf("number ordered = %d\n", orderedChildren.size());
 
         for (int i = 0; i < orderedChildren.size(); i++) {
             System.out.println(orderedChildren.get(i).state.toString());
