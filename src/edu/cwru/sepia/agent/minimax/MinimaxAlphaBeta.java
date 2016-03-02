@@ -134,10 +134,15 @@ public class MinimaxAlphaBeta extends Agent {
                     }
 
                     // if we are moving into a resource then very bad
-                    // for (GameState.ResourceLocation resource : )
+                    for (GameState.ResourceLocation resource : child.state.getResources()) {
+                        if (resource.getLocation().equals(footman.getLocation())) {
+                            value -= 10000;
+                        }
+                    }
                 }
 
             }
+
             heuristicValues.put(value, child);
         }
 
