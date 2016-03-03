@@ -19,8 +19,6 @@ import java.util.*;
  */
 public class GameState {
 
-    private static final int MAX_PREVIOUS_POSITIONS_SIZE = 10;
-
     private boolean maxNode;
     private int xExtent;
     private int yExtent;
@@ -71,7 +69,7 @@ public class GameState {
             int basicAttack = unit.getTemplateView().getBasicAttack();
             int range = unit.getTemplateView().getRange();
             Queue<Pair<Integer, Integer>> previousLocations= new LinkedList<>();
-            footmen.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range, previousLocations));
+            footmen.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range));
         }
         this.footmen = footmen;
 
@@ -85,7 +83,7 @@ public class GameState {
             int basicAttack = unit.getTemplateView().getBasicAttack();
             int range = unit.getTemplateView().getRange();
             Queue<Pair<Integer, Integer>> previousLocations= new LinkedList<>();
-            archers.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range, previousLocations));
+            archers.add(new SimpleUnit(id, x, y, baseHealth, currentHealth, basicAttack, range));
         }
         this.archers = archers;
 
@@ -199,13 +197,6 @@ public class GameState {
                 }
             }
         }
-
-        for (SimpleUnit footman : footmen) {
-            if (footman.getPreviousLocations().contains(footman.getLocation())) {
-                previousLocFeature += 50;
-            }
-        }
-
 
         //add utilities
 
@@ -382,7 +373,6 @@ public class GameState {
             DirectedAction directedAction = (DirectedAction) action;
             int newX = unit.getX() + directedAction.getDirection().xComponent();
             int newY = unit.getY() + directedAction.getDirection().yComponent();
-            Queue<Pair<Integer, Integer>> previousLocations = addPreviousLocation(unit);
 
             SimpleUnit newUnit = new SimpleUnit(unit.getId(),
                     newX,
@@ -390,8 +380,7 @@ public class GameState {
                     unit.getBaseHealth(),
                     unit.getCurrentHealth(),
                     unit.getBasicAttack(),
-                    unit.getRange(),
-                    previousLocations);
+                    unit.getRange());
 
             return new Pair<>(newUnit, null);
 
@@ -418,8 +407,7 @@ public class GameState {
                     targetedUnit.getBaseHealth(),
                     targetedUnit.getCurrentHealth() - unit.getBasicAttack(),
                     targetedUnit.getBasicAttack(),
-                    targetedUnit.getRange(),
-                    targetedUnit.getPreviousLocations());
+                    targetedUnit.getRange());
 
             return new Pair<>(unit, newTargetedUnit);
         }
@@ -462,21 +450,6 @@ public class GameState {
             }
         }
         return possibleTargets;
-    }
-
-    /**
-     * Constructs a new list of previous locations based on the current unit
-     * @param unit The unit who's previousLocations queue is being used
-     * @return A new queue with unit's location in it
-     */
-    private Queue<Pair<Integer, Integer>> addPreviousLocation(SimpleUnit unit) {
-        Queue<Pair<Integer, Integer>> previousLocations = new LinkedList<>(unit.getPreviousLocations());
-        if (previousLocations.size() >= MAX_PREVIOUS_POSITIONS_SIZE) {
-            previousLocations.remove();
-        }
-
-        previousLocations.add(unit.getLocation());
-        return previousLocations;
     }
 
     /**
@@ -805,9 +778,7 @@ public class GameState {
         private int basicAttack;
         private int range;
 
-        private Queue<Pair<Integer, Integer>> previousLocations;
-
-        public SimpleUnit(int id, int x, int y, int baseHealth, int currentHealth, int basicAttack, int range, Queue<Pair<Integer, Integer>> previousLocations) {
+        public SimpleUnit(int id, int x, int y, int baseHealth, int currentHealth, int basicAttack, int range) {
             this.id = id;
             this.x = x;
             this.y = y;
@@ -815,7 +786,6 @@ public class GameState {
             this.currentHealth = currentHealth;
             this.basicAttack = basicAttack;
             this.range = range;
-            this.previousLocations = previousLocations;
         }
 
         /**
@@ -874,10 +844,6 @@ public class GameState {
 
         public int getRange() {
             return range;
-        }
-
-        public Queue<Pair<Integer, Integer>> getPreviousLocations() {
-            return previousLocations;
         }
 
         @Override
