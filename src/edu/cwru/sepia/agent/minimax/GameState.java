@@ -357,16 +357,13 @@ public class GameState {
         }
 
         // Find all attack actions
-        List<Pair<Integer, Integer>> possibleTargets = findAllPossibleTargets(unit.getLocation(), enemyUnits);
+        List<Integer> possibleTargets = findAllPossibleTargets(unit.getLocation(), unit.getRange(), enemyUnits);
 
-        for (Pair<Integer, Integer> possibleTarget : possibleTargets) {
-            int targetId = possibleTarget.a;
-            int distance = possibleTarget.b;
-            if (unit.getRange() >= distance) {
-                allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), targetId));
-            }
+        for (int target : possibleTargets) {
+            allPossibleActions.add(Action.createCompoundAttack(unit.getId(), target));
         }
 
+        System.out.println("Action list : " + Arrays.toString(allPossibleActions.toArray()));
         return allPossibleActions;
     }
 
@@ -455,7 +452,7 @@ public class GameState {
 
     /**
      * Creates a new enemy list, updating the old one.
-     * @param unit The unit, may be null
+     * @param unit      The unit, may be null
      * @param enemyList The list of enemy units that are to be updated
      * @return A updated enemy list
      */
@@ -471,22 +468,19 @@ public class GameState {
     }
 
     /**
-     * Finds all possible targets for a given unit based on their location. Range is not factored.
+     * Finds all possible targets for a given unit based on their location.
      * @param location The location of the attacking unit
-     * @param enemies The list of enemies who could possibly be attacked
+     * @param range    The range of the attacking unit
+     * @param enemies  The list of enemies who could possibly be attacked
      * @return List of tuples (targetID, range)
      */
-    private List<Pair<Integer, Integer>> findAllPossibleTargets(Pair<Integer, Integer> location, List<SimpleUnit> enemies) {
-        List<Pair<Integer, Integer>> possibleTargets = new ArrayList<>();
+    private List<Integer> findAllPossibleTargets(Pair<Integer, Integer> location, int range, List<SimpleUnit> enemies) {
+        List<Integer> possibleTargets = new ArrayList<>();
         for (SimpleUnit enemy : enemies) {
-            if (Objects.equals(enemy.getLocation().a, location.a)) {
-                // x coordinates are equal
-                int distance = Math.abs(location.b - enemy.getLocation().b);
-                possibleTargets.add(new Pair<>(enemy.getId(), distance));
-            } else if (Objects.equals(enemy.getLocation().b, location.b)) {
-                // y coordinates are equal
-                int distance = Math.abs(location.a - enemy.getLocation().a);
-                possibleTargets.add(new Pair<>(enemy.getId(), distance));
+            Pair<Integer, Integer> enemyLocation = enemy.getLocation();
+            if (range >= Math.abs(location.a - enemyLocation.a) &&
+                    range >= Math.abs(location.b - enemyLocation.b)) {
+                possibleTargets.add(enemy.getId());
             }
         }
         return possibleTargets;
