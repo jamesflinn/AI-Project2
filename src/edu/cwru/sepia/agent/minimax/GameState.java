@@ -132,6 +132,7 @@ public class GameState {
         int wallDistFeature = 0;
         int columnFeature   = 0;
         int rowFeature      = 0;
+        int obstacleFeature = 0;
 
         // archers are bad
         for (SimpleUnit archer : archers) {
@@ -146,7 +147,7 @@ public class GameState {
         // distance to archers is bad
         for (SimpleUnit footman : footmen) {
             for (SimpleUnit archer : archers) {
-                distanceFeature += taxicab(footman, archer);
+                distanceFeature += taxicab(footman.getLocation(), archer.getLocation());
             }
         }
 
@@ -155,7 +156,7 @@ public class GameState {
             int dist = 0;
             // minimum distance to one archer
             for (SimpleUnit footman : footmen) {
-                dist += taxicab(footman, archer);
+                dist += taxicab(footman.getLocation(), archer.getLocation());
             }
             minDistFeature = dist < minDistFeature ? dist : minDistFeature;
         }
@@ -163,7 +164,7 @@ public class GameState {
         // archer distance from each other
         for (SimpleUnit archer : archers) {
             for (SimpleUnit archer2 : archers) {
-                archDistFeature += taxicab(archer, archer2);
+                archDistFeature += taxicab(archer.getLocation(), archer2.getLocation());
             }
         }
 
@@ -182,16 +183,53 @@ public class GameState {
             }
         }
 
+//        // don't want resources on same row / column
+//        for (SimpleUnit footman : footmen) {
+//            for (ResourceLocation resource : resources) {
+//                obstacleFeature += resource.x == footman.getX() || resource.y == footman.getY() ? 5 : 0;
+//            }
+//        }
+
+//        // if we are next to a resource then very bad
+//        for (SimpleUnit footman : footmen) {
+//            for (ResourceLocation resource : resources) {
+//                if (taxicab(resource.getLocation(), footman.getLocation()) == 1) {
+//                    obstacleFeature += 10000;
+//                }
+//            }
+//        }
+
+//        // if we are close to obstacles then bad?
+//        for (SimpleUnit footman : footmen) {
+//            int closestObstacle = 0;
+//            for (ResourceLocation resource : resources) {
+//                obstacleFeature += taxicab(footman.getLocation(), resource.getLocation());
+//            }
+//        }
+
+//        // closest obstacle is bad
+//        for (SimpleUnit footman : footmen) {
+//            int closestObstacle = 0;
+//            int newDist = 0;
+//            for (ResourceLocation resource : resources) {
+//                newDist = taxicab(footman.getLocation(), resource.getLocation());
+//                closestObstacle = newDist > closestObstacle ? closestObstacle : newDist;
+//            }
+//
+//            obstacleFeature += closestObstacle;
+//        }
+
         //add utilities
 
         utility -= archerFeature;
         utility += footmanFeature;
         utility -= distanceFeature;
-        //utility -= minDistFeature;
+        utility -= minDistFeature;
         utility -= archDistFeature;
         utility -= wallDistFeature;
         utility += rowFeature;
         utility += columnFeature;
+        utility -= obstacleFeature;
 
         return utility;
     }
@@ -545,10 +583,10 @@ public class GameState {
      * @param second The second unit
      * @return       The taxicab distance between the two units.
      */
-    private int taxicab(GameState.SimpleUnit first, GameState.SimpleUnit second) {
+    private int taxicab(Pair<Integer, Integer> first, Pair<Integer, Integer> second) {
 
-        int deltaX = Math.abs(first.getX() - second.getX());
-        int deltaY = Math.abs(first.getY() - second.getY());
+        int deltaX = Math.abs(first.a - second.a);
+        int deltaY = Math.abs(first.b - second.b);
 
         return deltaX + deltaY;
 
