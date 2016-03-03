@@ -74,35 +74,17 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The best child of this node with updated values
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta) {
-        if (depth == 0 || isLeafNode(node)) {
-            return node;
-        }
-
         double value;
         GameStateChild bestChild = node;
+        value = -70000;
 
-        if (isMaxNode(node)) {
-            value = -70000;
-
-            for (GameStateChild child : node.state.getChildren()) {
-                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
-                if (childValue == value) {
-                    bestChild = Math.random() * 100 > 50 ? child : bestChild;
-                }
-                bestChild = childValue > value ? child : bestChild;
-                value = childValue > value ? childValue : value;
+        for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+            double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+            if (childValue == value) {
+                bestChild = Math.random() * 100 > 50 ? child : bestChild;
             }
-        }
-        else {
-            // TODO Not sure if this min is necessary
-            // does this method get called on MIN turns?
-            value = 70000;
-
-            for (GameStateChild child : node.state.getChildren()) {
-                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
-                bestChild = childValue < value ? child : bestChild;
-                value = childValue < value ? childValue : value;
-            }
+            bestChild = childValue > value ? child : bestChild;
+            value = childValue > value ? childValue : value;
         }
 
         System.out.printf("utility: %f\n", bestChild.state.getUtility());
@@ -134,7 +116,6 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
-
             return value;
 
         } else {
@@ -148,7 +129,6 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
-
             return value;
         }
     }
