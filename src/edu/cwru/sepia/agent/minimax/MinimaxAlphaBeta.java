@@ -6,7 +6,7 @@ import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
-import javafx.util.Pair;
+import edu.cwru.sepia.util.Pair;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -168,52 +168,52 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
 
-        ArrayList<Pair<Integer, GameStateChild>> heuristicValues = new ArrayList();
+        ArrayList<Pair<Integer, GameStateChild>> heuristicValues = new ArrayList<>();
         for (GameStateChild child : children) {
             int value = 0;
 
             // Heuristics based upon actions
             for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
-
                 // if this is an attack then best
                 if (action.getValue().getType() == ActionType.PRIMITIVEATTACK) {
                     value += 1000;
                 }
-
             }
 
             // Heuristics based upon units
             for (GameState.SimpleUnit footman : child.state.getFootmen()) {
-
                 // give each state a value based upon distance the footman are from the archers
                 for (GameState.SimpleUnit archer : child.state.getArchers()) {
                     value -= taxicab(footman, archer);
-                }
-
-                // if we are moving into a resource then very bad
-                for (GameState.ResourceLocation resource : child.state.getResources()) {
-                    if (resource.getLocation().equals(footman.getLocation())) {
-                        value -= 10000;
-                    }
                 }
             }
 
             heuristicValues.add(new Pair<>(value, child));
         }
 
-
-        Comparator<Pair<Integer, GameStateChild>> c = new Comparator<Pair<Integer, GameStateChild>>() {
+        Comparator<Pair<Integer, GameStateChild>> maxCompare = new Comparator<Pair<Integer, GameStateChild>>() {
             @Override
             public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
-
-                return o2.getKey() - o1.getKey();
+                return o2.a - o1.a;
             }
         };
 
-        Collections.sort(heuristicValues, c);
+        Comparator<Pair<Integer, GameStateChild>> minCompare = new Comparator<Pair<Integer, GameStateChild>>() {
+            @Override
+            public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
+                return o1.a - o2.a;
+            }
+        };
+
+
+        if (children.get(0).state.getMaxNode()) {
+            Collections.sort(heuristicValues, maxCompare);
+        } else {
+            Collections.sort(heuristicValues, minCompare);
+        }
         ArrayList<GameStateChild> orderedChildren = new ArrayList<>();
         for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
-            orderedChildren.add(heuristic.getValue());
+            orderedChildren.add(heuristic.b);
         }
 
         return orderedChildren;
