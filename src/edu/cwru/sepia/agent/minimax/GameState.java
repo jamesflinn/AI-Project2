@@ -363,7 +363,6 @@ public class GameState {
             allPossibleActions.add(Action.createCompoundAttack(unit.getId(), target));
         }
 
-        System.out.println("Action list : " + Arrays.toString(allPossibleActions.toArray()));
         return allPossibleActions;
     }
 

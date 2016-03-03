@@ -174,12 +174,10 @@ public class MinimaxAlphaBeta extends Agent {
 
             // Heuristics based upon actions
             for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
-
                 // if this is an attack then best
                 if (action.getValue().getType() == ActionType.PRIMITIVEATTACK) {
                     value += 1000;
                 }
-
             }
 
             // Heuristics based upon units
@@ -193,16 +191,26 @@ public class MinimaxAlphaBeta extends Agent {
             heuristicValues.add(new Pair<>(value, child));
         }
 
-
-        Comparator<Pair<Integer, GameStateChild>> c = new Comparator<Pair<Integer, GameStateChild>>() {
+        Comparator<Pair<Integer, GameStateChild>> maxCompare = new Comparator<Pair<Integer, GameStateChild>>() {
             @Override
             public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
-
                 return o2.a - o1.a;
             }
         };
 
-        Collections.sort(heuristicValues, c);
+        Comparator<Pair<Integer, GameStateChild>> minCompare = new Comparator<Pair<Integer, GameStateChild>>() {
+            @Override
+            public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
+                return o1.a - o2.a;
+            }
+        };
+
+
+        if (children.get(0).state.getMaxNode()) {
+            Collections.sort(heuristicValues, maxCompare);
+        } else {
+            Collections.sort(heuristicValues, minCompare);
+        }
         ArrayList<GameStateChild> orderedChildren = new ArrayList<>();
         for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
             orderedChildren.add(heuristic.b);
