@@ -210,11 +210,11 @@ public class GameState {
         //add utilities
 
         utility -= archerFeature;
-//        utility += footmanFeature;
+        utility += footmanFeature;
         utility -= distanceFeature;
 //        utility -= minDistFeature;
-//        utility -= archDistFeature;
-//        utility -= wallDistFeature;
+        utility -= archDistFeature;
+        utility -= wallDistFeature;
         utility += rowFeature;
         utility += columnFeature;
 //        utility -= previousLocFeature;
@@ -339,7 +339,7 @@ public class GameState {
         List<Integer> possibleTargets = findAllPossibleTargets(unit.getLocation(), unit.getRange(), enemyUnits);
 
         for (int target : possibleTargets) {
-            allPossibleActions.add(Action.createCompoundAttack(unit.getId(), target));
+            allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), target));
         }
 
         return allPossibleActions;

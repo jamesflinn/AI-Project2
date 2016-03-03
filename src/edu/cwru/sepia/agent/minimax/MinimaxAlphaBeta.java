@@ -74,35 +74,17 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The best child of this node with updated values
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta) {
-        if (depth == 0 || isLeafNode(node)) {
-            return node;
-        }
-
         double value;
         GameStateChild bestChild = node;
+        value = -70000;
 
-        if (isMaxNode(node)) {
-            value = -70000;
-
-            for (GameStateChild child : node.state.getChildren()) {
-                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
-                if (childValue == value) {
-                    bestChild = Math.random() * 100 > 50 ? child : bestChild;
-                }
-                bestChild = childValue > value ? child : bestChild;
-                value = childValue > value ? childValue : value;
+        for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+            double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
+            if (childValue == value) {
+                bestChild = Math.random() * 100 > 50 ? child : bestChild;
             }
-        }
-        else {
-            // TODO Not sure if this min is necessary
-            // does this method get called on MIN turns?
-            value = 70000;
-
-            for (GameStateChild child : node.state.getChildren()) {
-                double childValue = alphaBetaValue(child, depth - 1, alpha, beta);
-                bestChild = childValue < value ? child : bestChild;
-                value = childValue < value ? childValue : value;
-            }
+            bestChild = childValue > value ? child : bestChild;
+            value = childValue > value ? childValue : value;
         }
 
         System.out.printf("utility: %f\n", bestChild.state.getUtility());
@@ -134,7 +116,6 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
-
             return value;
 
         } else {
@@ -148,7 +129,6 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 } 
             }
-
             return value;
         }
     }
@@ -167,6 +147,9 @@ public class MinimaxAlphaBeta extends Agent {
      * @return The list of children sorted by your heuristic.
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children) {
+        // multiplier that is positive for max nodes, negative for min nodes
+        // used for when footmen/archers want opposite things (e.g., archers want more distance)
+        int multiplier = children.get(0).state.getMaxNode() ? 1 : -1;
 
         ArrayList<Pair<Integer, GameStateChild>> heuristicValues = new ArrayList<>();
         for (GameStateChild child : children) {
@@ -184,33 +167,21 @@ public class MinimaxAlphaBeta extends Agent {
             for (GameState.SimpleUnit footman : child.state.getFootmen()) {
                 // give each state a value based upon distance the footman are from the archers
                 for (GameState.SimpleUnit archer : child.state.getArchers()) {
-                    value -= taxicab(footman, archer);
+                    value -= (taxicab(footman, archer) * multiplier);
                 }
             }
 
             heuristicValues.add(new Pair<>(value, child));
         }
 
-        Comparator<Pair<Integer, GameStateChild>> maxCompare = new Comparator<Pair<Integer, GameStateChild>>() {
+        Comparator<Pair<Integer, GameStateChild>> c = new Comparator<Pair<Integer, GameStateChild>>() {
             @Override
             public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
                 return o2.a - o1.a;
             }
         };
 
-        Comparator<Pair<Integer, GameStateChild>> minCompare = new Comparator<Pair<Integer, GameStateChild>>() {
-            @Override
-            public int compare(Pair<Integer, GameStateChild> o1, Pair<Integer, GameStateChild> o2) {
-                return o1.a - o2.a;
-            }
-        };
-
-
-        if (children.get(0).state.getMaxNode()) {
-            Collections.sort(heuristicValues, maxCompare);
-        } else {
-            Collections.sort(heuristicValues, minCompare);
-        }
+        Collections.sort(heuristicValues, c);
         ArrayList<GameStateChild> orderedChildren = new ArrayList<>();
         for (Pair<Integer, GameStateChild> heuristic : heuristicValues) {
             orderedChildren.add(heuristic.b);
