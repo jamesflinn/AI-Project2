@@ -324,7 +324,7 @@ public class GameState {
         List<Integer> possibleTargets = findAllPossibleTargets(unit.getLocation(), unit.getRange(), enemyUnits);
 
         for (int target : possibleTargets) {
-            allPossibleActions.add(Action.createCompoundAttack(unit.getId(), target));
+            allPossibleActions.add(Action.createPrimitiveAttack(unit.getId(), target));
         }
 
         return allPossibleActions;
