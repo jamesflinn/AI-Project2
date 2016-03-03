@@ -31,6 +31,8 @@ public class GameState {
 
     private List<ResourceLocation> resources;
 
+    // PUBLIC FUNCTIONS
+
     /**
      * You will implement this constructor. It will
      * extract all of the needed state information from the built in
@@ -140,6 +142,7 @@ public class GameState {
         int obstacleFeature = 0;
         int previousLocFeature = 0;
 
+
         // archers are bad
         for (SimpleUnit archer : archers) {
             archerFeature += archer.getCurrentHealth();
@@ -195,41 +198,6 @@ public class GameState {
             }
         }
 
-//        // don't want resources on same row / column
-//        for (SimpleUnit footman : footmen) {
-//            for (ResourceLocation resource : resources) {
-//                obstacleFeature += resource.x == footman.getX() || resource.y == footman.getY() ? 5 : 0;
-//            }
-//        }
-
-//        // if we are next to a resource then very bad
-//        for (SimpleUnit footman : footmen) {
-//            for (ResourceLocation resource : resources) {
-//                if (taxicab(resource.getLocation(), footman.getLocation()) == 1) {
-//                    obstacleFeature += 10000;
-//                }
-//            }
-//        }
-
-//        // if we are close to obstacles then bad?
-//        for (SimpleUnit footman : footmen) {
-//            int closestObstacle = 0;
-//            for (ResourceLocation resource : resources) {
-//                obstacleFeature += taxicab(footman.getLocation(), resource.getLocation());
-//            }
-//        }
-
-//        // closest obstacle is bad
-//        for (SimpleUnit footman : footmen) {
-//            int closestObstacle = 0;
-//            int newDist = 0;
-//            for (ResourceLocation resource : resources) {
-//                newDist = taxicab(footman.getLocation(), resource.getLocation());
-//                closestObstacle = newDist > closestObstacle ? closestObstacle : newDist;
-//            }
-//
-//            obstacleFeature += closestObstacle;
-//        }
 
         //add utilities
 
@@ -241,7 +209,6 @@ public class GameState {
         utility -= wallDistFeature;
         utility += rowFeature;
         utility += columnFeature;
-        utility -= obstacleFeature;
         utility -= previousLocFeature;
 
         return utility;
@@ -323,6 +290,8 @@ public class GameState {
 
         return children;
     }
+
+    // PRIVATE FUNCTIONS
 
     /**
      * Finds all possible actions for a given unit
@@ -543,6 +512,37 @@ public class GameState {
         return null;
     }
 
+    private boolean canSee(Pair<Integer, Integer> locationTile, Pair<Integer, Integer> goalTile) {
+
+        int deltaX = Math.abs(locationTile.a - goalTile.a);
+        int deltaY = Math.abs(locationTile.b - goalTile.b);
+
+        double error = 0;
+
+        Set<Pair<Integer, Integer>> line = new HashSet<>();
+
+        // no dividing by zero here
+        if (deltaX != 0) {
+            double deltaError = deltaY / deltaX;
+
+            int y = locationTile.b;
+            for (int x = locationTile.a; x <= goalTile.a; x++) {
+                line.add(new Pair(x, y));
+                error += deltaError;
+                    while (error >= 0.5) {
+                        line.add(new Pair(x, y));
+                        y += Math.sin(goalTile.b - locationTile.b);
+                        error -= 1;
+                    }
+            }
+        }
+
+        String canSee = line.contains(goalTile) ? "can see" : "can't see";
+        System.out.printf("(%d, %d) %s (%d, %d)\n", locationTile.a, locationTile.b, canSee, goalTile.a, goalTile.b);
+        return line.contains(goalTile);
+
+    }
+
     /**
      * Finds the index of the unit by id.
      * @param unit the unit being searched for
@@ -559,6 +559,8 @@ public class GameState {
         }
         return -1;
     }
+
+    // GETTERS / SETTERS
 
     public boolean getMaxNode() {
         return this.maxNode;
@@ -630,6 +632,8 @@ public class GameState {
         return distToXWall + distToYWall;
 
     }
+
+    // CLASSES
 
     /**
      * Represents a unit, but only has the fields necessary for the Minimax algorithm.
