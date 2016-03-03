@@ -1,7 +1,6 @@
 package edu.cwru.sepia.agent.minimax;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.environment.model.state.*;
@@ -29,7 +28,7 @@ public class GameState {
     private List<SimpleUnit> footmen;
     private List<SimpleUnit> archers;
 
-    private List<ResourceLocation> resources;
+    private List<MapLocation> resources;
 
     // PUBLIC FUNCTIONS
 
@@ -90,9 +89,9 @@ public class GameState {
         }
         this.archers = archers;
 
-        List<ResourceLocation> resources = new ArrayList<>();
+        List<MapLocation> resources = new ArrayList<>();
         for (ResourceNode.ResourceView view : state.getAllResourceNodes()) {
-            resources.add(new ResourceLocation(view.getXPosition(), view.getYPosition()));
+            resources.add(new MapLocation(view.getXPosition(), view.getYPosition()));
         }
         this.resources = resources;
     }
@@ -154,11 +153,20 @@ public class GameState {
         }
 
         // distance to archers is bad
+        // calculate aStar to closest archer
         for (SimpleUnit footman : footmen) {
-            for (SimpleUnit archer : archers) {
-                distanceFeature += taxicab(footman.getLocation(), archer.getLocation());
+            int closest = 70000;
+            SimpleUnit closeArch = null;
+            for (SimpleUnit archer: archers) {
+                int newDist = taxicab(footman.getLocation(), archer.getLocation());
+                closeArch = newDist < closest ? archer : closeArch;
+                closest = newDist < closest ? newDist : closest;
             }
+
+            System.out.println("calc Astar");
+            distanceFeature += aStarDistance(new MapLocation(footman), new MapLocation(closeArch));
         }
+
 
         // minium distance to one archer
         for (SimpleUnit archer : archers) {
@@ -202,14 +210,16 @@ public class GameState {
         //add utilities
 
         utility -= archerFeature;
-        utility += footmanFeature;
+//        utility += footmanFeature;
         utility -= distanceFeature;
-        utility -= minDistFeature;
-        utility -= archDistFeature;
-        utility -= wallDistFeature;
+//        utility -= minDistFeature;
+//        utility -= archDistFeature;
+//        utility -= wallDistFeature;
         utility += rowFeature;
         utility += columnFeature;
-        utility -= previousLocFeature;
+//        utility -= previousLocFeature;
+
+        //System.out.println(toString());
 
         return utility;
     }
@@ -319,7 +329,7 @@ public class GameState {
                     newY >= yExtent ||
                     newX < 0 ||
                     newY < 0 ||
-                    resources.contains(new ResourceLocation(newX, newY)) ||
+                    resources.contains(new MapLocation(newX, newY)) ||
                     unitIsLocated(new Pair<>(newX, newY)))) {
                 allPossibleActions.add(Action.createPrimitiveMove(unit.getId(), direction));
             }
@@ -559,6 +569,153 @@ public class GameState {
         return -1;
     }
 
+    private int aStarDistance(MapLocation start, MapLocation goal) {
+
+        // search Lists
+        Comparator comparator = pathComparator(start, goal);
+        PriorityQueue<Stack<MapLocation>> openList =
+                new PriorityQueue<Stack<MapLocation>>(11, comparator);
+
+        Set<MapLocation> closedList = new HashSet<>();
+        Stack<MapLocation> finalPath = new Stack<>();
+        Stack<MapLocation> initialPath = new Stack<>();
+
+        initialPath.add(start);
+        openList.add(initialPath);
+
+        // The search
+        while (!openList.isEmpty()) {
+
+            Stack<MapLocation> currentPath = openList.poll();
+            MapLocation currentLoc = currentPath.peek();
+
+            if (currentLoc.equals(goal)) {
+                // found the goal
+                currentPath.pop();
+                while (!currentPath.isEmpty()) {
+                    finalPath.push(currentPath.pop());
+                }
+                break;
+            } else {
+                // didn't find the goal
+                MapLocation[] successors =
+                        expandState(currentLoc);
+
+                closedList.add(currentLoc);
+
+                for (MapLocation successor : successors) {
+
+                    // System.out.println(successor + " : " + enemyFootmanLoc);
+
+                    if (successor != null && !closedList.contains(successor) &&
+                            !resources.contains(successor) &&
+                            !alreadyPath(openList, successor) &&
+                            !resources.contains(successor)) {
+
+                        Stack<MapLocation> newPath =
+                                (Stack<MapLocation>) currentPath.clone();
+                        newPath.push(successor);
+                        openList.add(newPath);
+                    }
+                }
+
+            }
+        }
+
+        if (finalPath.isEmpty()) {
+            System.out.println("No Avaliable path");
+            return 0;
+        }
+
+        // return the path
+        finalPath.pop();
+        return finalPath.size();
+    }
+
+    /**
+     * returns all of the successor nodes of a MapLocation
+     *
+     * @param loc   The location to expand
+     * @return      The successor locations
+     */
+    private MapLocation[] expandState(MapLocation loc) {
+
+        MapLocation north       = new MapLocation(loc.x, loc.y - 1);
+        MapLocation south       = new MapLocation(loc.x, loc.y + 1);
+        MapLocation west        = new MapLocation(loc.x - 1, loc.y);
+        MapLocation east        = new MapLocation(loc.x + 1, loc.y);
+        MapLocation[] successors = {north, south, east, west};
+
+        for (int i = 0; i < successors.length; i++) {
+            if ( successors[i].x < 0 || successors[i].x > xExtent ||
+                    successors[i].y < 0 || successors[i].y > yExtent ||
+                    resources.contains(successors[i])) {
+
+                successors[i] = null;
+            }
+        }
+
+        return successors;
+    }
+
+    /**
+     * Checks the open list to see if a path already has reached the location
+     *
+     * @param openList  the open list
+     * @param location  the location
+     * @return          Whether there is already a path
+     */
+    private boolean alreadyPath(PriorityQueue<Stack<MapLocation>> openList, MapLocation location) {
+        for (Stack<MapLocation> path : openList) {
+            if (path.peek().equals(location)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * returns a comparator for lists of locations.
+     *
+     * @return the comparator
+     */
+    private Comparator pathComparator(MapLocation start, MapLocation goal) {
+
+        // class that compares two MapLocations by their heuristic
+        class PathComparator implements Comparator<Stack<MapLocation>> {
+
+            MapLocation start;
+            MapLocation goal;
+
+            public PathComparator(MapLocation start, MapLocation goal) {
+                this.start = start;
+                this.goal = goal;
+            }
+
+            public int compare(Stack<MapLocation> o1, Stack<MapLocation> o2) {
+
+                int dist1 = o1.size();
+                int dist2 = o2.size();
+                int taxicab1 = taxicab(o1.peek().getLocation(), goal.getLocation());
+                int taxicab2 = taxicab(o2.peek().getLocation(), goal.getLocation());
+
+                if (taxicab1 + dist1 == taxicab2 + dist2) {
+                    return 0;
+                }
+
+                return  dist1 + taxicab1 < dist2 + taxicab2 ? -1 : 1;
+
+            }
+
+            public boolean equals(Object obj) {
+                return false;
+            }
+        }
+
+        return new PathComparator(start, goal);
+    }
+
     // GETTERS / SETTERS
 
     public boolean getMaxNode() {
@@ -581,7 +738,7 @@ public class GameState {
         return archers;
     }
 
-    public List<ResourceLocation> getResources() {
+    public List<MapLocation> getResources() {
         return resources;
     }
 
@@ -736,13 +893,18 @@ public class GameState {
     /**
      * Simple class to hold the locations of resources.
      */
-    public class ResourceLocation {
+    public class MapLocation {
         public int x;
         public int y;
 
-        public ResourceLocation(int x, int y) {
+        public MapLocation(int x, int y) {
             this.x = x;
             this.y = y;
+        }
+
+        public MapLocation(SimpleUnit unit) {
+            this.x = unit.x;
+            this.y = unit.y;
         }
 
         public Pair<Integer, Integer> getLocation() {
@@ -754,7 +916,7 @@ public class GameState {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ResourceLocation that = (ResourceLocation) o;
+            MapLocation that = (MapLocation) o;
 
             if (x != that.x) return false;
             return y == that.y;

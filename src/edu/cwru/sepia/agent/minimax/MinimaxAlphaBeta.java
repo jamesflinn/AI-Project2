@@ -146,7 +146,7 @@ public class MinimaxAlphaBeta extends Agent {
 
                 if (beta <= alpha) {
                     break;
-                }
+                } 
             }
 
             return value;
