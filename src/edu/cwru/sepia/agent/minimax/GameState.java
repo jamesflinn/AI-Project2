@@ -195,42 +195,6 @@ public class GameState {
             }
         }
 
-//        // don't want resources on same row / column
-//        for (SimpleUnit footman : footmen) {
-//            for (ResourceLocation resource : resources) {
-//                obstacleFeature += resource.x == footman.getX() || resource.y == footman.getY() ? 5 : 0;
-//            }
-//        }
-
-//        // if we are next to a resource then very bad
-//        for (SimpleUnit footman : footmen) {
-//            for (ResourceLocation resource : resources) {
-//                if (taxicab(resource.getLocation(), footman.getLocation()) == 1) {
-//                    obstacleFeature += 10000;
-//                }
-//            }
-//        }
-
-//        // if we are close to obstacles then bad?
-//        for (SimpleUnit footman : footmen) {
-//            int closestObstacle = 0;
-//            for (ResourceLocation resource : resources) {
-//                obstacleFeature += taxicab(footman.getLocation(), resource.getLocation());
-//            }
-//        }
-
-//        // closest obstacle is bad
-//        for (SimpleUnit footman : footmen) {
-//            int closestObstacle = 0;
-//            int newDist = 0;
-//            for (ResourceLocation resource : resources) {
-//                newDist = taxicab(footman.getLocation(), resource.getLocation());
-//                closestObstacle = newDist > closestObstacle ? closestObstacle : newDist;
-//            }
-//
-//            obstacleFeature += closestObstacle;
-//        }
-
         //add utilities
 
         utility -= archerFeature;
