@@ -161,26 +161,20 @@ public class GameState {
         int obstacleFeature = 0;
         int previousLocFeature = 0;
 
-
-        // archers are bad
-        for (SimpleUnit archer : archers) {
-            archerFeature += archer.getCurrentHealth();
-        }
-
-        // footmen are good
-        for (SimpleUnit footman : footmen) {
-            footmanFeature += footman.getCurrentHealth();
-        }
-
         // distance to archers is bad
         // calculate aStar to closest archer
         for (SimpleUnit footman : footmen) {
+
+            footmanFeature += footman.getCurrentHealth();
+
             int closest = 70000;
             SimpleUnit closeArch = null;
             for (SimpleUnit archer: archers) {
                 int newDist = taxicab(footman.getLocation(), archer.getLocation());
                 closeArch = newDist < closest ? archer : closeArch;
                 closest = newDist < closest ? newDist : closest;
+
+                archerFeature += archer.getCurrentHealth();
             }
 
             if (GameState.aStarCache.containsKey(footman.getLocation())) {
@@ -193,26 +187,11 @@ public class GameState {
             }
         }
 
-
-        // minium distance to one archer
-        for (SimpleUnit archer : archers) {
-            int dist = 0;
-            // minimum distance to one archer
-            for (SimpleUnit footman : footmen) {
-                dist += taxicab(footman.getLocation(), archer.getLocation());
-            }
-            minDistFeature = dist < minDistFeature ? dist : minDistFeature;
-        }
-
         // archer distance from each other
         for (SimpleUnit archer : archers) {
             for (SimpleUnit archer2 : archers) {
                 archDistFeature += taxicab(archer.getLocation(), archer2.getLocation());
             }
-        }
-
-        // archer distance to walls
-        for (SimpleUnit archer : archers) {
             wallDistFeature += distanceToWalls(archer);
         }
 
@@ -231,12 +210,10 @@ public class GameState {
         utility -= archerFeature;
         utility += footmanFeature;
         utility -= distanceFeature * 5;
-//        utility -= minDistFeature;
         utility -= archDistFeature;
         utility -= wallDistFeature;
         utility += rowFeature;
         utility += columnFeature;
-//        utility -= previousLocFeature;
 
         //System.out.println(toString());
 
@@ -522,37 +499,6 @@ public class GameState {
         return null;
     }
 
-    private boolean canSee(Pair<Integer, Integer> locationTile, Pair<Integer, Integer> goalTile) {
-
-        int deltaX = Math.abs(locationTile.a - goalTile.a);
-        int deltaY = Math.abs(locationTile.b - goalTile.b);
-
-        double error = 0;
-
-        Set<Pair<Integer, Integer>> line = new HashSet<>();
-
-        // no dividing by zero here
-        if (deltaX != 0) {
-            double deltaError = deltaY / deltaX;
-
-            int y = locationTile.b;
-            for (int x = locationTile.a; x <= goalTile.a; x++) {
-                line.add(new Pair(x, y));
-                error += deltaError;
-                    while (error >= 0.5) {
-                        line.add(new Pair(x, y));
-                        y += Math.sin(goalTile.b - locationTile.b);
-                        error -= 1;
-                    }
-            }
-        }
-
-        String canSee = line.contains(goalTile) ? "can see" : "can't see";
-        System.out.printf("(%d, %d) %s (%d, %d)\n", locationTile.a, locationTile.b, canSee, goalTile.a, goalTile.b);
-        return line.contains(goalTile);
-
-    }
-
     /**
      * Finds the index of the unit by id.
      * @param unit the unit being searched for
@@ -570,12 +516,18 @@ public class GameState {
         return -1;
     }
 
+    /**
+     * This calculates the distance of a path between two locations
+     * @param start The beginning location
+     * @param goal  The goal location
+     * @return      The distance bewteen the two locations
+     */
     private int aStarDistance(MapLocation start, MapLocation goal) {
 
         // search Lists
         Comparator comparator = pathComparator(start, goal);
         PriorityQueue<Stack<MapLocation>> openList =
-                new PriorityQueue<Stack<MapLocation>>(11, comparator);
+                new PriorityQueue<>(11, comparator);
 
         Set<MapLocation> closedList = new HashSet<>();
         Stack<MapLocation> finalPath = new Stack<>();
@@ -855,7 +807,7 @@ public class GameState {
         }
 
         public Pair<Integer, Integer> getLocation() {
-            return new Pair<Integer, Integer>(x, y);
+            return new Pair<>(x, y);
         }
 
         public int getBaseHealth() {
@@ -876,11 +828,11 @@ public class GameState {
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("location: (").append(x).append(", ").append(y).append(")\n");
-            builder.append("health: ").append(currentHealth).append(" / ").append(baseHealth).append("\n");
+            String builder = "";
+            builder += "location: (" + x + ", " + y + ")\n";
+            builder += "health: " + currentHealth + " / " + baseHealth + "\n";
 
-            return builder.toString();
+            return builder;
         }
     }
 
@@ -902,7 +854,7 @@ public class GameState {
         }
 
         public Pair<Integer, Integer> getLocation() {
-            return new Pair<Integer, Integer>(x, y);
+            return new Pair<>(x, y);
         }
 
         @Override
