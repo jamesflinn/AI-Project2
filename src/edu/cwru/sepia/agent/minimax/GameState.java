@@ -8,6 +8,7 @@ import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class stores all of the information the agent
@@ -18,6 +19,12 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
+
+    /**
+     * Used for caching distances so that A* does not need to be recalculated every turn.
+     * Key is the location, and value is (distance, time_remaining).
+     */
+    private static Map<Pair<Integer, Integer>, Pair<Integer, Integer>> aStarCache = new ConcurrentHashMap<>();
 
     private boolean maxNode;
     private int xExtent;
@@ -102,6 +109,21 @@ public class GameState {
 
         this.footmen = footmen;
         this.archers = archers;
+
+        updateCache();
+    }
+
+    /**
+     * Updates the cache. If the time runs out for any entry, removes that entry from the Map.
+     */
+    private void updateCache() {
+        for (Map.Entry<Pair<Integer, Integer>, Pair<Integer, Integer>> entry : GameState.aStarCache.entrySet()) {
+            if (entry.getValue().b - 1 == 0) {
+                GameState.aStarCache.remove(entry.getKey());
+            } else {
+                GameState.aStarCache.put(entry.getKey(), new Pair<>(entry.getValue().a, entry.getValue().b - 1));
+            }
+        }
     }
 
     /**
@@ -161,8 +183,14 @@ public class GameState {
                 closest = newDist < closest ? newDist : closest;
             }
 
-            System.out.println("calc Astar");
-            distanceFeature += aStarDistance(new MapLocation(footman), new MapLocation(closeArch));
+            if (GameState.aStarCache.containsKey(footman.getLocation())) {
+                System.out.println("CACHING!");
+                distanceFeature += GameState.aStarCache.get(footman.getLocation()).a;
+            } else {
+                int distance = aStarDistance(new MapLocation(footman), new MapLocation(closeArch));
+                distanceFeature += distance;
+                GameState.aStarCache.put(footman.getLocation(), new Pair<>(distance, 3));
+            }
         }
 
 
@@ -202,7 +230,7 @@ public class GameState {
 
         utility -= archerFeature;
         utility += footmanFeature;
-        utility -= distanceFeature;
+        utility -= distanceFeature * 5;
 //        utility -= minDistFeature;
         utility -= archDistFeature;
         utility -= wallDistFeature;
