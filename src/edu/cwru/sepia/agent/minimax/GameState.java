@@ -107,39 +107,34 @@ public class GameState {
     }
 
     /**
-     * You will implement this function.
-     * <p>
-     * You should use weighted linear combination of features.
-     * The features may be primitives from the state (such as hp of a unit)
-     * or they may be higher level summaries of information from the state such
-     * as distance to a specific location. Come up with whatever features you think
-     * are useful and weight them appropriately.
-     * <p>
-     * It is recommended that you start simple until you have your algorithm working. Then watch
-     * your agent play and try to add features that correct mistakes it makes. However, remember that
-     * your features should be as fast as possible to compute. If the features are slow then you will be
-     * able to do less plys in a turn.
-     * <p>
-     *  TODO Add a good comment about what is in your utility and why you chose those features.
+     * determines the utility of the state based on a weighted linear evaluation function based upon the following features
+     *
+     * The health of the archers and footmen, the distance between each footman and it's nearest archer. These two are
+     * pretty self explanatory, we want to kill the archers and stay alive and we want to be as close to the archers as
+     * possible. The distance is calculated using the aStar algorithm which allows for pathfinding around obstacles.
+     *
+     * archDist is the distance between the two archers and wallDist is the distance from the archers to the nearest
+     * wall. These are features we want to minimize because having the archers be close together allows us to quickly
+     * attack the next archer when one dies. When archers are close to the wall they are limited in the ways they can
+     * escape a footman which is good.
+     *
+     * The last features are column and row features. These features tell the footmen that they don't want to be on the
+     * same column or row as another footman. This helps the footmen from following each other when chasing archers
+     * and lets them work together better.
      *
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
 
-        // TODO make this faster
-        // highly unoptimized right now
         int utility = 0;
 
         int archerFeature   = 0;
         int footmanFeature  = 0;
         int distanceFeature = 0;
-        int minDistFeature  = 70000;
         int archDistFeature = 0;
         int wallDistFeature = 0;
         int columnFeature   = 0;
         int rowFeature      = 0;
-        int obstacleFeature = 0;
-        int previousLocFeature = 0;
 
         // distance to archers is bad
         // calculate aStar to closest archer
@@ -180,15 +175,13 @@ public class GameState {
 
         //add utilities
 
-        utility -= archerFeature;
+        utility -= archerFeature * 2;
         utility += footmanFeature;
         utility -= distanceFeature * 5;
         utility -= archDistFeature;
-        utility -= wallDistFeature;
+        utility -= wallDistFeature * 5;
         utility += rowFeature;
         utility += columnFeature;
-
-        //System.out.println(toString());
 
         return utility;
     }
@@ -325,7 +318,7 @@ public class GameState {
             List<List<Action>> extraColumnCombinations = new ArrayList<>();
             for (Action action : actions) {
                 if (combinations.isEmpty()) {
-                    extraColumnCombinations.add(Arrays.asList(action));
+                    extraColumnCombinations.add(Collections.singletonList(action));
                 } else {
                     for (List<Action> productList : combinations) {
                         List<Action> newProductList = new ArrayList<>(productList);
@@ -760,16 +753,6 @@ public class GameState {
             this.basicAttack = basicAttack;
             this.range = range;
             this.previousLocations = previousLocations;
-        }
-
-        /**
-         * Returns true if this unit is located at (x, y)
-         * @param x the x coordinate
-         * @param y the y coordinate
-         * @return true if this is located at (x, y)
-         */
-        public boolean isLocated(int x, int y) {
-            return this.x == x && this.y == y;
         }
 
         @Override
