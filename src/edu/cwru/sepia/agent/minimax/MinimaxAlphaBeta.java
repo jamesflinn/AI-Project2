@@ -134,14 +134,11 @@ public class MinimaxAlphaBeta extends Agent {
     }
 
     /**
-     * You will implement this.
-     * <p>
-     * Given a list of children you will order them according to heuristics you make up.
-     * See the assignment description for suggestions on heuristics to use when sorting.
-     * <p>
-     * Use this function inside of your alphaBetaSearch method.
-     * <p>
-     * Include a good comment about what your heuristics are and why you chose them.
+     * Orders a list of children by a heuristic
+     *
+     * The heuristic takes into account distance and unit health. In order to minimize the time spent calculating
+     * The distance is the taxicab distance between each footman and each archer and not the actual path. Unit health
+     * is important to value attacking states.
      *
      * @param children The list of children of the current state
      * @return The list of children sorted by your heuristic.
@@ -155,19 +152,13 @@ public class MinimaxAlphaBeta extends Agent {
         for (GameStateChild child : children) {
             int value = 0;
 
-            // Heuristics based upon actions
-            for (Map.Entry<Integer, Action> action : child.action.entrySet()) {
-                // if this is an attack then best
-                if (action.getValue().getType() == ActionType.PRIMITIVEATTACK) {
-                    value += 1000;
-                }
-            }
-
             // Heuristics based upon units
             for (GameState.SimpleUnit footman : child.state.getFootmen()) {
+                value += footman.getCurrentHealth();
                 // give each state a value based upon distance the footman are from the archers
                 for (GameState.SimpleUnit archer : child.state.getArchers()) {
                     value -= (taxicab(footman, archer) * multiplier);
+                    value -= archer.getCurrentHealth();
                 }
             }
 

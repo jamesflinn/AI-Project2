@@ -173,7 +173,6 @@ public class GameState {
             }
 
             if (GameState.aStarCache.containsKey(footman.getLocation())) {
-                System.out.println("CACHING!");
                 distanceFeature += GameState.aStarCache.get(footman.getLocation()).a;
             } else {
                 int distance = aStarDistance(new MapLocation(footman), new MapLocation(closeArch));
