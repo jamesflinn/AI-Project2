@@ -113,6 +113,8 @@ public class MinimaxAlphaBeta extends Agent {
                 alpha = Math.max(alpha, value);
 
                 if (beta <= alpha) {
+                    System.out.println("Pruned:");
+                    System.out.println(node.state.toString());
                     break;
                 }
             }
@@ -126,6 +128,8 @@ public class MinimaxAlphaBeta extends Agent {
                 beta = Math.min(beta, value);
 
                 if (beta <= alpha) {
+                    System.out.println("Pruned:");
+                    System.out.println(node.state.toString());
                     break;
                 } 
             }
